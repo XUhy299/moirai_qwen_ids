@@ -1,7 +1,11 @@
 __pycache__/
 *.py[cod]
-outputs/
-data/
-models/
-synthetic_data/
+outputs/*
+!outputs/.gitkeep
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+synthetic_data/*
+!synthetic_data/.gitkeep
 *.incomplete
