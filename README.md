@@ -243,6 +243,23 @@ Three explicit pure-verbalizer candidate configs are provided:
 All three use L=64, MOIRAI Base layer 12, DirectProjector, classifier weight
 zero, verbalizer weight one, and cloud-locked physical/evaluation batch four.
 
+Run all three candidates sequentially for seeds 2026/2027/2028 with:
+
+```bash
+bash scripts/run_strong_candidates_cloud.sh
+```
+
+The launcher still calls the single `scripts/train.py` entry point. It writes
+one log per run, prints a heartbeat every 60 seconds, stops on the first
+failure, and refuses to reuse a non-empty output directory. Useful overrides:
+
+```bash
+SEEDS="2026" CANDIDATES="s1 s2 s3" DRY_RUN=1 \
+  bash scripts/run_strong_candidates_cloud.sh
+RUN_TAG=rerun01 SEEDS="2027 2028" CANDIDATES="s2 s3" \
+  bash scripts/run_strong_candidates_cloud.sh
+```
+
 Before concatenation, the loader verifies the normal-train file hash, active
 channel order and types, window length, float32 shape, endpoint masks, labels,
 source endpoints, finite values, and the package's train-only isolation flag.
