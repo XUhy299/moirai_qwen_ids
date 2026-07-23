@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+import torch
 
 from mqids.synthetic_anomalies import (
     OPERATOR_NAMES,
@@ -15,6 +16,8 @@ from mqids.synthetic_anomalies import (
     fit_synthetic_statistics,
 )
 from mqids.data import SyntheticWindowDataset
+from mqids.data import infer_channel_metadata, infer_discrete_state_vocabulary
+from mqids.switch_templates import build_discrete_text
 
 
 class SyntheticAnomalyTests(unittest.TestCase):
@@ -73,6 +76,19 @@ class SyntheticAnomalyTests(unittest.TestCase):
         np.testing.assert_array_equal(first.window, second.window)
         np.testing.assert_array_equal(first.point_mask, second.point_mask)
         self.assertEqual(first.metadata, second.metadata)
+
+    def test_unknown_discrete_state_reports_inverse_scaled_raw_value(self) -> None:
+        train = np.asarray([[0.0], [1.0]], dtype=np.float64)
+        metadata = infer_channel_metadata(train, ("1_LS_001_STATUS",))
+        vocabulary = infer_discrete_state_vocabulary(
+            train,
+            metadata,
+            source="unit-test",
+            scaler_mean=np.asarray([10.0]),
+            scaler_scale=np.asarray([2.0]),
+        )
+        text = build_discrete_text(torch.tensor([[0.0, 3.0]]), vocabulary)
+        self.assertEqual(text, ("未知状态（原始值=16）",))
 
     def test_offline_package_matches_training_dataset_interface(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

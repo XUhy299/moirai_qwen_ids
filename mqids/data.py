@@ -75,6 +75,8 @@ class DiscreteStateSpec:
     values: tuple[float, ...]
     raw_values: tuple[float, ...]
     state_names: tuple[str, ...]
+    scaler_mean: float = 0.0
+    scaler_scale: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -137,7 +139,6 @@ def infer_channel_metadata(
     train_x: np.ndarray,
     names: Sequence[str],
     *,
-    extra_arrays: Sequence[np.ndarray] | None = None,
     constant_tolerance: float = 1e-8,
     cardinality_sample_size: int = 200_000,
 ) -> ChannelMetadata:
@@ -146,19 +147,9 @@ def infer_channel_metadata(
     if len(names) != train_x.shape[1]:
         raise ValueError("Sensor-name count does not match the WADI array")
 
-    all_arrays = [train_x]
-    if extra_arrays:
-        for arr in extra_arrays:
-            if arr.shape[1] != train_x.shape[1]:
-                raise ValueError("Extra array channel count does not match train")
-            all_arrays.append(arr)
-
-    mins = np.full(train_x.shape[1], np.inf, dtype=np.float64)
-    maxs = np.full(train_x.shape[1], -np.inf, dtype=np.float64)
-    for arr in all_arrays:
-        arr_mins, arr_maxs = _stream_min_max(arr)
-        mins = np.minimum(mins, arr_mins)
-        maxs = np.maximum(maxs, arr_maxs)
+    # Channel selection is deliberately train-only.  Do not add an escape hatch
+    # for validation/test arrays here: that caused the pre-repair DTT leakage.
+    mins, maxs = _stream_min_max(train_x)
 
     constant_mask = np.isclose(mins, maxs, rtol=0.0, atol=constant_tolerance)
     active = np.flatnonzero(~constant_mask)
@@ -236,11 +227,16 @@ def infer_discrete_state_vocabulary(
                 values=tuple(float(value) for value in values),
                 raw_values=tuple(float(value) for value in raw_values),
                 state_names=state_names,
+                scaler_mean=float(scaler_mean[original_index]),
+                scaler_scale=float(scaler_scale[original_index]),
             )
         )
     return DiscreteStateVocabulary(
         source=source,
-        unknown_state_rule="训练期词表中无匹配值时输出未知状态及原始值；不得按窗口重新编号",
+        unknown_state_rule=(
+            "训练期词表中无匹配值时，使用训练期scaler还原并输出未知状态的原始值；"
+            "不得按窗口重新编号"
+        ),
         variables=tuple(variables),
     )
 

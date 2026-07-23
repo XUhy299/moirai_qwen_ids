@@ -229,6 +229,26 @@ def probe_batch(
             torch.cuda.empty_cache()
 
 
+def recommend_batch_size(
+    successes: list[dict[str, object]],
+    *,
+    device: torch.device,
+    total_memory_mb: float | None,
+    headroom_fraction: float,
+) -> int | None:
+    if not successes:
+        return None
+    if device.type != "cuda":
+        return int(successes[-1]["batch_size"])
+    if total_memory_mb is None:
+        raise ValueError("CUDA recommendation requires total GPU memory")
+    limit_mb = total_memory_mb * (1 - headroom_fraction)
+    with_headroom = [
+        item for item in successes if float(item["peak_reserved_mb"]) <= limit_mb
+    ]
+    return int(with_headroom[-1]["batch_size"]) if with_headroom else None
+
+
 def main() -> None:
     args = parse_args()
     if not 0 <= args.headroom_fraction < 1:
@@ -255,14 +275,16 @@ def main() -> None:
         if result["status"] == "oom":
             break
     successes = [item for item in results if item["status"] == "ok"]
-    recommendation = None
-    if successes:
-        if device.type == "cuda":
-            limit_mb = float(report["environment"]["gpu_total_memory_mb"]) * (1 - args.headroom_fraction)
-            with_headroom = [item for item in successes if float(item["peak_reserved_mb"]) <= limit_mb]
-            recommendation = (with_headroom or successes)[-1]["batch_size"]
-        else:
-            recommendation = successes[-1]["batch_size"]
+    recommendation = recommend_batch_size(
+        successes,
+        device=device,
+        total_memory_mb=(
+            float(report["environment"]["gpu_total_memory_mb"])
+            if device.type == "cuda"
+            else None
+        ),
+        headroom_fraction=args.headroom_fraction,
+    )
     report.update(
         {
             "purpose": "engineering smoke and physical-batch capacity probe; not a detection experiment",

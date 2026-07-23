@@ -8,12 +8,20 @@ import torch
 from .data import DiscreteStateVocabulary
 
 
-def _lookup_state(current_value: float, values: tuple[float, ...], names: tuple[str, ...]) -> str:
+def _lookup_state(
+    current_value: float,
+    values: tuple[float, ...],
+    names: tuple[str, ...],
+    *,
+    scaler_mean: float,
+    scaler_scale: float,
+) -> str:
     candidates = np.asarray(values, dtype=np.float64)
     matches = np.flatnonzero(np.isclose(candidates, current_value, rtol=0.0, atol=1e-6))
     if matches.size:
         return names[int(matches[0])]
-    return f"未知状态（原始值={current_value:g}）"
+    raw_value = current_value * scaler_scale + scaler_mean
+    return f"未知状态（原始值={raw_value:g}）"
 
 
 def build_discrete_text(
@@ -35,6 +43,12 @@ def build_discrete_text(
         raise ValueError("A discrete window cannot be empty")
 
     return tuple(
-        _lookup_state(float(windows[i, -1]), spec.values, spec.state_names)
+        _lookup_state(
+            float(windows[i, -1]),
+            spec.values,
+            spec.state_names,
+            scaler_mean=spec.scaler_mean,
+            scaler_scale=spec.scaler_scale,
+        )
         for i, spec in enumerate(vocabulary.variables)
     )

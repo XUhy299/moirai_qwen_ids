@@ -59,6 +59,8 @@ class ExperimentConfig:
             raise ValueError("projector must be linear, direct, or reprogramming")
         if self.backbone not in {"qwen", "none"}:
             raise ValueError("backbone must be qwen or none")
+        if self.backbone == "none" and self.discrete_to_text:
+            raise ValueError("discrete_to_text requires the Qwen backbone")
         if not 0.0 < self.support_fraction < 1.0:
             raise ValueError("support_fraction must lie strictly between 0 and 1")
         if self.split_guard < self.window_length:
@@ -75,8 +77,29 @@ class ExperimentConfig:
             raise ValueError("All sampling strides must be positive")
         if min(self.batch_size, self.eval_batch_size) < 1:
             raise ValueError("Batch sizes must be positive")
+        if min(
+            self.normal_to_anomaly_ratio,
+            self.max_normal_train_windows,
+            self.epochs,
+            self.projector_hidden_dim,
+            self.attention_dim,
+            self.attention_heads,
+            self.baseline_hidden_dim,
+            self.baseline_layers,
+        ) < 1:
+            raise ValueError("Counts, dimensions, and epochs must be positive")
+        if not 0.0 <= self.dropout < 1.0:
+            raise ValueError("dropout must lie in [0, 1)")
+        if self.learning_rate <= 0:
+            raise ValueError("learning_rate must be positive")
+        if self.weight_decay < 0:
+            raise ValueError("weight_decay cannot be negative")
+        if self.moirai_size not in {"small", "base", "large"}:
+            raise ValueError("moirai_size must be small, base, or large")
         if len(self.labels) != 2:
             raise ValueError("Exactly two verbalizer labels are required")
+        if self.labels[0] == self.labels[1] or any(not label.strip() for label in self.labels):
+            raise ValueError("Verbalizer labels must be distinct non-empty strings")
         if self.backbone == "none" and (
             self.vocab_loss_weight != 0 or self.classifier_loss_weight == 0
         ):

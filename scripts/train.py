@@ -10,6 +10,7 @@ import hashlib
 import os
 import pickle
 import platform
+import re
 import sys
 from collections import Counter
 from dataclasses import replace
@@ -101,6 +102,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--baseline-hidden-dim", type=int, default=None)
     parser.add_argument("--baseline-layers", type=int, default=None)
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+        help="Override the physical training batch size after a measured capacity probe.",
+    )
+    parser.add_argument("--eval-batch-size", type=int, default=None)
     parser.add_argument("--prompt-variant", choices=PROMPT_VARIANTS, default=None)
     parser.add_argument(
         "--moirai-layer",
@@ -134,12 +142,13 @@ def parse_args() -> argparse.Namespace:
             "has explicitly authorized the full experiment."
         ),
     )
-    parser.add_argument(
+    execution = parser.add_mutually_exclusive_group()
+    execution.add_argument(
         "--prepare-only",
         action="store_true",
         help="Validate and save the data protocol without loading MOIRAI or Qwen.",
     )
-    parser.add_argument(
+    execution.add_argument(
         "--smoke",
         action="store_true",
         help="Run one epoch on four train and four development windows.",
@@ -163,8 +172,19 @@ def sha256_file(path: Path, chunk_size: int = 8 * 1024 * 1024) -> str:
     return digest.hexdigest()
 
 
+def validate_run_name(run_name: str) -> str:
+    """Keep every run artifact inside outputs/ and make names shell-portable."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", run_name):
+        raise ValueError(
+            "--run-name must start with an ASCII letter or digit and contain only "
+            "letters, digits, '.', '_' or '-'"
+        )
+    return run_name
+
+
 def main() -> None:
     args = parse_args()
+    validate_run_name(args.run_name)
     config = load_config(args.config)
     replacements = {}
     if args.projector is not None:
@@ -179,6 +199,10 @@ def main() -> None:
         replacements["baseline_hidden_dim"] = args.baseline_hidden_dim
     if args.baseline_layers is not None:
         replacements["baseline_layers"] = args.baseline_layers
+    if args.batch_size is not None:
+        replacements["batch_size"] = args.batch_size
+    if args.eval_batch_size is not None:
+        replacements["eval_batch_size"] = args.eval_batch_size
     if args.moirai_layer is not None:
         replacements["moirai_encoder_layer"] = args.moirai_layer
     if args.discrete_to_text:
@@ -192,6 +216,8 @@ def main() -> None:
         replacements["patch_size"] = args.window_length
     if replacements:
         config = replace(config, **replacements)
+    if args.dtt_semantic_style is not None and not config.discrete_to_text:
+        raise ValueError("--dtt-semantic-style requires --discrete-to-text")
     if not args.use_synthetic_anomalies and (
         args.synthetic_data_dir is not None or args.synthetic_samples is not None
     ):

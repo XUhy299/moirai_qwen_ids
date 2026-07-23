@@ -91,47 +91,51 @@ three projectors without loading large weights. Add `--real-qwen` to also use th
 local Qwen checkpoint. A real MOIRAI run requires the complete Uni2TS dependency
 environment.
 
-After the real-model smoke passes, a diagnostic training run can be started with:
+After the real-model smoke passes, a diagnostic training run may be started only
+after explicit authorization. Every non-smoke run must include
+`--full-run-authorized`:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/train.py `
-  --run-name wadi_l32_reprogramming_seed2026 --device cuda
+& $python scripts/train.py `
+  --run-name wadi_l32_reprogramming_seed2026 `
+  --full-run-authorized --device cuda
 ```
 
 The first controlled L=32 ablation uses the same base config and only changes
 the recorded command-line override:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/train.py --run-name l32_linear_head `
-  --projector linear --vocab-loss-weight 0 --device cuda
-& $python ids/moirai_qwen_ids/scripts/train.py --run-name l32_direct_head `
-  --projector direct --vocab-loss-weight 0 --device cuda
-& $python ids/moirai_qwen_ids/scripts/train.py --run-name l32_reprogram_head `
-  --projector reprogramming --vocab-loss-weight 0 --device cuda
-& $python ids/moirai_qwen_ids/scripts/train.py --run-name l32_reprogram_dual `
-  --projector reprogramming --vocab-loss-weight 0.1 --device cuda
-& $python ids/moirai_qwen_ids/scripts/train.py --run-name l32_verbalizer_only `
+& $python scripts/train.py --run-name l32_linear_head `
+  --projector linear --vocab-loss-weight 0 --full-run-authorized --device cuda
+& $python scripts/train.py --run-name l32_direct_head `
+  --projector direct --vocab-loss-weight 0 --full-run-authorized --device cuda
+& $python scripts/train.py --run-name l32_reprogram_head `
+  --projector reprogramming --vocab-loss-weight 0 --full-run-authorized --device cuda
+& $python scripts/train.py --run-name l32_reprogram_dual `
+  --projector reprogramming --vocab-loss-weight 0.1 --full-run-authorized --device cuda
+& $python scripts/train.py --run-name l32_verbalizer_only `
   --projector reprogramming --classifier-loss-weight 0 `
-  --vocab-loss-weight 1 --device cuda
-& $python ids/moirai_qwen_ids/scripts/train.py --config `
-  ids/moirai_qwen_ids/configs/wadi_no_llm_baseline.json `
-  --run-name l32_no_llm --device cuda
-& $python ids/moirai_qwen_ids/scripts/train.py --config `
-  ids/moirai_qwen_ids/configs/wadi_no_llm_baseline.json `
-  --baseline-hidden-dim 384 --run-name l32_no_llm_param_matched --device cuda
+  --vocab-loss-weight 1 --full-run-authorized --device cuda
+& $python scripts/train.py --config configs/wadi_no_llm_baseline.json `
+  --run-name l32_no_llm --full-run-authorized --device cuda
+& $python scripts/train.py --config configs/wadi_no_llm_baseline.json `
+  --baseline-hidden-dim 384 --run-name l32_no_llm_param_matched `
+  --full-run-authorized --device cuda
 ```
 
-Do not run the formal test split until the test-X dependency and DTT state-mapping
-bug have been removed, then select the architecture and threshold protocol using
-training/development data only.
+The test-X dependency and DTT state-mapping bug have been removed from the
+current code, but this does not authorize formal testing. Select and lock the
+architecture and threshold protocol using training/development data only before
+opening the formal test split.
 
 For the fair window grid, all window lengths share endpoint candidates starting
 at 127, so their sampled normal endpoints and development endpoints match for a
 given seed:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/train.py --run-name l8_direct `
-  --window-length 8 --projector direct --vocab-loss-weight 0 --device cuda
+& $python scripts/train.py --run-name l8_direct `
+  --window-length 8 --projector direct --vocab-loss-weight 0 `
+  --full-run-authorized --device cuda
 ```
 
 MOIRAI Base Encoder layers use 1-based numbering. For example, this selects the
@@ -139,16 +143,16 @@ MOIRAI Base Encoder layers use 1-based numbering. For example, this selects the
 unchanged:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/train.py --run-name l64_layer10_direct `
+& $python scripts/train.py --run-name l64_layer10_direct `
   --window-length 64 --moirai-layer 10 --projector direct `
-  --vocab-loss-weight 0 --device cuda
+  --vocab-loss-weight 0 --full-run-authorized --device cuda
 ```
 
 Every prepared or trained run writes a human-readable `results.md` beside its
 JSON files in `outputs/<run-name>/`. Backfill older outputs with:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/generate_results_md.py
+& $python scripts/generate_results_md.py
 ```
 
 Multi-run research summaries live under `record/<experiment-name>/README.md`.
@@ -165,14 +169,14 @@ outputs are restricted to states observed in normal training data.
 The WADI default generates 5,000 endpoint-aligned L=64 windows:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/generate_synthetic_anomalies.py
+& $python scripts/generate_synthetic_anomalies.py
 ```
 
 For another dataset, pass its normal `[time, channels]` NumPy array and one
 UTF-8 channel name per line:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/generate_synthetic_anomalies.py `
+& $python scripts/generate_synthetic_anomalies.py `
   --input-x path/to/normal_train_x.npy `
   --sensor-names path/to/channel_names.txt `
   --output-dir path/to/synthetic_output `
@@ -189,7 +193,7 @@ Training ignores synthetic data by default. Enable the package matching the
 resolved window length explicitly:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/train.py `
+& $python scripts/train.py `
   --run-name l32_with_synthetic --window-length 32 `
   --use-synthetic-anomalies --prepare-only
 ```
@@ -200,7 +204,7 @@ than allowing the 5,000-window package to dominate training. Override the count
 or package path explicitly when needed:
 
 ```powershell
-& $python ids/moirai_qwen_ids/scripts/train.py `
+& $python scripts/train.py `
   --run-name l16_with_all_synthetic --window-length 16 `
   --use-synthetic-anomalies --synthetic-samples 5000 `
   --synthetic-data-dir synthetic_data/WADI-CLEAN_X_train_full_l16_seed2026 `
