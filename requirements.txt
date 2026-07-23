@@ -1,0 +1,10 @@
+# Linux x86_64 / Python 3.11 / NVIDIA CUDA 12.1 deployment environment.
+# Install with: python -m pip install -r requirements.txt
+# A compatible NVIDIA driver is required for the CUDA wheel.
+--extra-index-url https://download.pytorch.org/whl/cu121
+
+torch==2.4.1+cu121
+uni2ts==2.0.0
+transformers==4.51.3
+scikit-learn==1.7.2
+tqdm==4.67.1
