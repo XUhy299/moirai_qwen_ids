@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import unittest
 from dataclasses import replace
+from unittest.mock import patch
+
+import torch
 
 from mqids.config import ExperimentConfig
 from scripts.train import validate_run_name
-from tests.probe_full_prompt_environment import recommend_batch_size
+from tests.probe_full_prompt_environment import recommend_batch_size, resolve_device
 
 
 class ConfigAndEntrypointTests(unittest.TestCase):
@@ -31,6 +34,14 @@ class ConfigAndEntrypointTests(unittest.TestCase):
             headroom_fraction=0.15,
         )
         self.assertIsNone(recommendation)
+
+    def test_probe_resolves_cuda_to_an_explicit_device_index(self) -> None:
+        with (
+            patch("torch.cuda.is_available", return_value=True),
+            patch("torch.cuda.current_device", return_value=3),
+        ):
+            self.assertEqual(resolve_device("cuda"), torch.device("cuda:3"))
+            self.assertEqual(resolve_device("auto"), torch.device("cuda:3"))
 
 
 if __name__ == "__main__":

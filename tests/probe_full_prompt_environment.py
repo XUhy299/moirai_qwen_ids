@@ -65,10 +65,12 @@ def resolve_device(requested: str) -> torch.device:
     if requested == "cuda":
         if not torch.cuda.is_available():
             raise RuntimeError("--device cuda was requested but CUDA is unavailable")
-        return torch.device("cuda")
+        return torch.device("cuda", torch.cuda.current_device())
     if requested == "cpu":
         return torch.device("cpu")
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        return torch.device("cuda", torch.cuda.current_device())
+    return torch.device("cpu")
 
 
 def parse_batch_sizes(raw: str) -> list[int]:
