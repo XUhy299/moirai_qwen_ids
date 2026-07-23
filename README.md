@@ -27,6 +27,21 @@ empty virtual environment, run `python -m pip install -r requirements.txt`.
 This installs the pinned CUDA PyTorch, Uni2TS 2.0.0 and all Uni2TS transitive
 dependencies. Run all commands from this directory with `python scripts/...`.
 
+### Full-prompt cloud smoke and batch probe
+
+After copying the WADI package into `data/wadi/` and the two local checkpoints
+into `models/`, run the following engineering-only check before any experiment:
+
+```bash
+python tests/probe_full_prompt_environment.py --device cuda
+```
+
+It checks the installed GPU stack, runs the authorized four-window real-model
+smoke with DTT `full` semantics, then performs one real forward/backward/update
+step at physical batches `1,2,4,8`. The probe uses one repeated normal-training
+window, never opens locked test data, and writes its resource report under
+`outputs/`. It is a capacity diagnostic, not a detection result.
+
 ## Current scope
 
 - WADI only.
