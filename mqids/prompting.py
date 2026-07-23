@@ -61,20 +61,43 @@ def prompt_texts(variant: str) -> tuple[str, str]:
         raise ValueError(f"Unknown prompt variant: {variant}") from exc
 
 
-def dtt_prompt_texts(variant: str, window_length: int) -> tuple[str, str]:
+def dtt_prompt_texts(
+    variant: str,
+    window_length: int,
+    numeric_mode: str = "continuous_only",
+) -> tuple[str, str]:
     """Return the variable-aligned DTT task prompt.
 
     The process variant contains WADI-specific task context. Counterfactual
     variants retain their original prefix but still declare the input layout so
     that the aligned assembler remains well-defined.
     """
+    if numeric_mode not in {"continuous_only", "all_active"}:
+        raise ValueError("DTT numeric mode must be continuous_only or all_active")
     if variant == "process":
-        return DTT_PROCESS_PREFIX_TEMPLATE.format(window_length=window_length), DTT_SUFFIX
+        if numeric_mode == "continuous_only":
+            prefix = DTT_PROCESS_PREFIX_TEMPLATE.format(window_length=window_length)
+        else:
+            prefix = (
+                "你正在执行WADI供水与配水工业控制系统的二分类异常检测任务。"
+                "输入来自系统中的传感器和执行器，请判断该时间窗口末端的当前系统状态是正常还是异常。"
+                "判断时应综合考虑单变量变化、设备当前状态，以及不同变量之间的时序和控制关系。"
+                f"每个变量后面的一个【时序Token】概括从过去到当前共{window_length}个时间步的数值序列；"
+                "开关量和低基数变量还会额外给出窗口末端的当前状态文本，该文本本身不表示历史。\n"
+                "以下按变量名逐项给出输入：\n"
+            )
+        return prefix, DTT_SUFFIX
     prefix, _ = prompt_texts(variant)
-    layout = (
-        f" Each continuous token summarizes {window_length} time steps through the current time;"
-        " each discrete value describes only the current state. Inputs are aligned by variable name:\n"
-    )
+    if numeric_mode == "continuous_only":
+        layout = (
+            f" Each continuous token summarizes {window_length} time steps through the current time;"
+            " each discrete value describes only the current state. Inputs are aligned by variable name:\n"
+        )
+    else:
+        layout = (
+            f" Each variable token summarizes {window_length} numerical time steps through the current time;"
+            " discrete variables additionally provide endpoint-state text. Inputs are aligned by variable name:\n"
+        )
     return prefix + layout, DTT_SUFFIX
 
 
@@ -172,7 +195,7 @@ class PromptAssembler(nn.Module):
         active_names: tuple[str, ...],
         active_descriptions: tuple[str, ...],
         semantic_style: str,
-        continuous_indices: tuple[int, ...],
+        numeric_indices: tuple[int, ...],
         discrete_indices: tuple[int, ...],
         discrete_states: list[tuple[str, ...]],
         window_length: int,
@@ -181,19 +204,25 @@ class PromptAssembler(nn.Module):
         batch = soft_tokens.shape[0]
         if len(discrete_states) != batch:
             raise ValueError("Each sample must provide its own discrete endpoint states")
-        if soft_tokens.shape[1] != len(continuous_indices):
-            raise ValueError("Continuous soft-token count does not match metadata")
+        if soft_tokens.shape[1] != len(numeric_indices):
+            raise ValueError("Numeric soft-token count does not match metadata")
         if any(len(states) != len(discrete_indices) for states in discrete_states):
             raise ValueError("Discrete state count does not match metadata")
-        covered = sorted((*continuous_indices, *discrete_indices))
-        if covered != list(range(len(active_names))):
-            raise ValueError("Continuous/discrete metadata must partition all active variables")
+        if len(set(numeric_indices)) != len(numeric_indices):
+            raise ValueError("Numeric-token indices must be unique")
+        if len(set(discrete_indices)) != len(discrete_indices):
+            raise ValueError("Discrete indices must be unique")
+        if any(index < 0 or index >= len(active_names) for index in (*numeric_indices, *discrete_indices)):
+            raise ValueError("Variable metadata contains an out-of-range index")
+        covered = set(numeric_indices) | set(discrete_indices)
+        if covered != set(range(len(active_names))):
+            raise ValueError("Numeric-token and discrete metadata must cover all active variables")
         if len(active_descriptions) != len(active_names):
             raise ValueError("Natural-language descriptions must match active variable names")
         if semantic_style not in {"compact", "full"}:
             raise ValueError("Semantic style must be compact or full")
 
-        continuous_slot = {active_pos: slot for slot, active_pos in enumerate(continuous_indices)}
+        numeric_slot = {active_pos: slot for slot, active_pos in enumerate(numeric_indices)}
         discrete_slot = {active_pos: slot for slot, active_pos in enumerate(discrete_indices)}
         device = soft_tokens.device
 
@@ -210,18 +239,29 @@ class PromptAssembler(nn.Module):
         for sample in range(batch):
             parts = [prefix]
             for active_pos, (name, description) in enumerate(zip(active_names, active_descriptions)):
-                if active_pos in continuous_slot:
+                has_numeric_token = active_pos in numeric_slot
+                has_discrete_state = active_pos in discrete_slot
+                if has_numeric_token:
                     if semantic_style == "compact":
                         header = f"{name}（{description}），{window_length}步："
                     else:
+                        variable_kind = "离散变量" if has_discrete_state else "连续变量"
                         header = (
-                            f"连续变量：{description}（原始变量ID：{name}），"
+                            f"{variable_kind}：{description}（原始变量ID：{name}），"
                             f"过去{window_length}步时序Token："
                         )
                     parts.append(text_embedding(header))
-                    slot = continuous_slot[active_pos]
+                    slot = numeric_slot[active_pos]
                     parts.append(soft_tokens[sample, slot : slot + 1])
-                    parts.append(text_embedding("。\n"))
+                    if has_discrete_state:
+                        state = discrete_states[sample][discrete_slot[active_pos]]
+                        if semantic_style == "compact":
+                            ending = f"，末端状态={state}\n"
+                        else:
+                            ending = f"，当前末端状态：{state}。\n"
+                        parts.append(text_embedding(ending))
+                    else:
+                        parts.append(text_embedding("。\n"))
                 else:
                     state = discrete_states[sample][discrete_slot[active_pos]]
                     if semantic_style == "compact":

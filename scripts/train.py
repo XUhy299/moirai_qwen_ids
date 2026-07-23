@@ -31,6 +31,8 @@ from mqids.config import PROMPT_VARIANTS, load_config
 from mqids.data import (
     WadiWindowDataset,
     SyntheticWindowDataset,
+    EpochRotatingSyntheticDataset,
+    build_stratified_epoch_schedules,
     infer_channel_metadata,
     infer_discrete_state_vocabulary,
     load_sensor_names,
@@ -96,6 +98,15 @@ def parse_args() -> argparse.Namespace:
             "count; pass 5000 explicitly to use the full generated package."
         ),
     )
+    parser.add_argument(
+        "--synthetic-sampling",
+        choices=("fixed", "epoch_stratified"),
+        default="fixed",
+        help=(
+            "fixed reuses one selected subset for every epoch; epoch_stratified "
+            "uses deterministic, non-overlapping, operator-stratified subsets per epoch."
+        ),
+    )
     parser.add_argument("--projector", choices=("linear", "direct", "reprogramming"), default=None)
     parser.add_argument("--vocab-loss-weight", type=float, default=None)
     parser.add_argument("--classifier-loss-weight", type=float, default=None)
@@ -133,6 +144,15 @@ def parse_args() -> argparse.Namespace:
         choices=("compact", "full"),
         default=None,
         help="Use compact or full natural-language variable descriptions in DTT mode.",
+    )
+    parser.add_argument(
+        "--dtt-numeric-mode",
+        choices=("continuous_only", "all_active"),
+        default=None,
+        help=(
+            "DTT numeric-token coverage: continuous_only replaces discrete numeric tokens "
+            "with endpoint-state text; all_active keeps all numeric tokens and adds state text."
+        ),
     )
     parser.add_argument(
         "--full-run-authorized",
@@ -209,6 +229,8 @@ def main() -> None:
         replacements["discrete_to_text"] = True
     if args.dtt_semantic_style is not None:
         replacements["dtt_semantic_style"] = args.dtt_semantic_style
+    if args.dtt_numeric_mode is not None:
+        replacements["dtt_numeric_mode"] = args.dtt_numeric_mode
     if args.prompt_variant is not None:
         replacements["prompt_variant"] = args.prompt_variant
     if args.window_length is not None:
@@ -218,11 +240,16 @@ def main() -> None:
         config = replace(config, **replacements)
     if args.dtt_semantic_style is not None and not config.discrete_to_text:
         raise ValueError("--dtt-semantic-style requires --discrete-to-text")
+    if args.dtt_numeric_mode is not None and not config.discrete_to_text:
+        raise ValueError("--dtt-numeric-mode requires --discrete-to-text")
     if not args.use_synthetic_anomalies and (
-        args.synthetic_data_dir is not None or args.synthetic_samples is not None
+        args.synthetic_data_dir is not None
+        or args.synthetic_samples is not None
+        or args.synthetic_sampling != "fixed"
     ):
         raise ValueError(
-            "--synthetic-data-dir/--synthetic-samples require --use-synthetic-anomalies"
+            "Synthetic package, sample-count, and sampling-mode options require "
+            "--use-synthetic-anomalies"
         )
     if args.synthetic_samples is not None and args.synthetic_samples < 1:
         raise ValueError("--synthetic-samples must be positive")
@@ -324,7 +351,10 @@ def main() -> None:
     synthetic_package = None
     synthetic_dataset = None
     synthetic_indices = np.empty(0, dtype=np.int64)
+    synthetic_epoch_indices: tuple[np.ndarray, ...] = ()
     synthetic_selected_operator_counts: dict[str, int] = {}
+    synthetic_epoch_operator_counts: list[dict[str, int]] = []
+    training_epochs = 1 if args.smoke else config.epochs
     if args.use_synthetic_anomalies:
         synthetic_dir = args.synthetic_data_dir or (
             PACKAGE_ROOT
@@ -349,23 +379,49 @@ def main() -> None:
                 f"{len(synthetic_package)}"
             )
         selected_synthetic = min(requested_synthetic, 2) if args.smoke else requested_synthetic
-        synthetic_indices = sample_endpoints(
-            np.arange(len(synthetic_package), dtype=np.int64),
-            selected_synthetic,
-            seed=config.seed,
-        )
-        synthetic_dataset = Subset(synthetic_package, synthetic_indices.tolist())
         code_to_operator = {
             int(code): name
             for name, code in synthetic_package.summary["operator_codes"].items()
         }
-        synthetic_selected_operator_counts = dict(
-            sorted(
-                Counter(
-                    code_to_operator[int(code)]
-                    for code in synthetic_package.operator_codes[synthetic_indices]
-                ).items()
+
+        if args.synthetic_sampling == "epoch_stratified":
+            synthetic_epoch_indices = build_stratified_epoch_schedules(
+                synthetic_package.operator_codes,
+                samples_per_epoch=selected_synthetic,
+                epochs=training_epochs,
+                seed=config.seed,
             )
+            synthetic_dataset = EpochRotatingSyntheticDataset(
+                synthetic_package,
+                synthetic_epoch_indices,
+            )
+            synthetic_indices = synthetic_epoch_indices[0]
+        else:
+            synthetic_indices = sample_endpoints(
+                np.arange(len(synthetic_package), dtype=np.int64),
+                selected_synthetic,
+                seed=config.seed,
+            )
+            synthetic_epoch_indices = tuple(
+                synthetic_indices.copy() for _ in range(training_epochs)
+            )
+            synthetic_dataset = Subset(synthetic_package, synthetic_indices.tolist())
+
+        synthetic_epoch_operator_counts = [
+            dict(
+                sorted(
+                    Counter(
+                        code_to_operator[int(code)]
+                        for code in synthetic_package.operator_codes[epoch_indices]
+                    ).items()
+                )
+            )
+            for epoch_indices in synthetic_epoch_indices
+        ]
+        synthetic_selected_operator_counts = synthetic_epoch_operator_counts[0]
+        np.save(
+            output_dir / "synthetic_epoch_indices.npy",
+            np.stack(synthetic_epoch_indices),
         )
     train_parts = [normal_dataset, anomaly_dataset]
     if synthetic_dataset is not None:
@@ -455,7 +511,7 @@ def main() -> None:
         "normal_endpoint_sha256": hashlib.sha256(normal_endpoints.tobytes()).hexdigest(),
         "anomaly_endpoint_sha256": hashlib.sha256(anomaly_endpoints.tobytes()).hexdigest(),
         "synthetic_selection_sha256": (
-            hashlib.sha256(synthetic_indices.tobytes()).hexdigest()
+            hashlib.sha256(np.concatenate(synthetic_epoch_indices).tobytes()).hexdigest()
             if synthetic_dataset is not None
             else None
         ),
@@ -481,6 +537,7 @@ def main() -> None:
         "qwen_chat_template_applied": bool(config.discrete_to_text),
         "qwen_thinking_enabled": False if config.discrete_to_text else None,
         "dtt_semantic_style": config.dtt_semantic_style if config.discrete_to_text else None,
+        "dtt_numeric_mode": config.dtt_numeric_mode if config.discrete_to_text else None,
         "full_run_authorized": bool(args.full_run_authorized),
         "synthetic_anomalies": (
             {
@@ -491,7 +548,18 @@ def main() -> None:
                     if args.synthetic_samples is None
                     else args.synthetic_samples
                 ),
+                "requested_windows_per_epoch": (
+                    len(anomaly_dataset)
+                    if args.synthetic_samples is None
+                    else args.synthetic_samples
+                ),
                 "selected_windows": len(synthetic_dataset),
+                "selected_windows_per_epoch": len(synthetic_dataset),
+                "sampling_mode": args.synthetic_sampling,
+                "scheduled_epochs": training_epochs,
+                "unique_selected_windows_across_epochs": int(
+                    len(np.unique(np.concatenate(synthetic_epoch_indices)))
+                ),
                 "smoke_cap_applied": bool(
                     args.smoke
                     and (
@@ -504,10 +572,16 @@ def main() -> None:
                 "package_input_x_sha256": synthetic_package.summary["input_x_sha256"],
                 "package_operator_counts": synthetic_package.summary["operator_counts"],
                 "selected_operator_counts": synthetic_selected_operator_counts,
+                "epoch_operator_counts": synthetic_epoch_operator_counts,
                 "endpoint_label_rule": "point_masks[:, -1] == true",
                 "selection_index_sha256": hashlib.sha256(
-                    synthetic_indices.tobytes()
+                    np.concatenate(synthetic_epoch_indices).tobytes()
                 ).hexdigest(),
+                "epoch_selection_sha256": [
+                    hashlib.sha256(indices.tobytes()).hexdigest()
+                    for indices in synthetic_epoch_indices
+                ],
+                "epoch_indices_file": "synthetic_epoch_indices.npy",
             }
             if synthetic_dataset is not None
             else {"enabled": False}
@@ -577,8 +651,10 @@ def main() -> None:
     best_selection_score = -float("inf")
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
-    epochs = 1 if args.smoke else config.epochs
+    epochs = training_epochs
     for epoch in range(1, epochs + 1):
+        if isinstance(synthetic_dataset, EpochRotatingSyntheticDataset):
+            synthetic_dataset.set_epoch(epoch - 1)
         train_metrics = train_one_epoch(model, train_loader, optimizer, objective, device)
         dev_metrics = evaluate_classifier(model, dev_loader, device)
         row: dict[str, object] = {"epoch": epoch, "train": train_metrics, "dev": dev_metrics}

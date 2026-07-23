@@ -15,7 +15,7 @@ from mqids.synthetic_anomalies import (
     SyntheticAnomalyConfig,
     fit_synthetic_statistics,
 )
-from mqids.data import SyntheticWindowDataset
+from mqids.data import SyntheticWindowDataset, build_stratified_epoch_schedules
 from mqids.data import infer_channel_metadata, infer_discrete_state_vocabulary
 from mqids.switch_templates import build_discrete_text
 
@@ -76,6 +76,32 @@ class SyntheticAnomalyTests(unittest.TestCase):
         np.testing.assert_array_equal(first.window, second.window)
         np.testing.assert_array_equal(first.point_mask, second.point_mask)
         self.assertEqual(first.metadata, second.metadata)
+
+    def test_epoch_stratified_schedules_are_reproducible_and_non_overlapping(self) -> None:
+        operator_codes = np.repeat(
+            np.arange(5, dtype=np.int64),
+            np.asarray([300, 500, 300, 600, 300]),
+        )
+        first = build_stratified_epoch_schedules(
+            operator_codes,
+            samples_per_epoch=170,
+            epochs=5,
+            seed=2026,
+        )
+        second = build_stratified_epoch_schedules(
+            operator_codes,
+            samples_per_epoch=170,
+            epochs=5,
+            seed=2026,
+        )
+        self.assertEqual(len(first), 5)
+        for left, right in zip(first, second):
+            np.testing.assert_array_equal(left, right)
+            self.assertEqual(len(left), 170)
+            counts = np.bincount(operator_codes[left], minlength=5)
+            np.testing.assert_array_equal(counts, np.asarray([26, 43, 25, 51, 25]))
+        combined = np.concatenate(first)
+        self.assertEqual(len(np.unique(combined)), 850)
 
     def test_unknown_discrete_state_reports_inverse_scaled_raw_value(self) -> None:
         train = np.asarray([[0.0], [1.0]], dtype=np.float64)

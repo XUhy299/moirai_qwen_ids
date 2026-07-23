@@ -51,7 +51,8 @@ window, never opens locked test data, and writes its resource report under
 - Trainable projector, variable/type embeddings and a two-class head.
 - The `正常/异常` Qwen verbalizer objective is auxiliary; the classifier head is
   the primary anomaly score.
-- No synthetic anomalies, LoRA, Student distillation or test-set tuning.
+- Optional train-only synthetic anomalies; no LoRA, Student distillation or
+  test-set tuning.
 
 The first supervised experiment uses part of WADI's single validation attack as
 a support set. It must be reported as **single-attack-event supervised transfer**,
@@ -210,6 +211,37 @@ or package path explicitly when needed:
   --synthetic-data-dir synthetic_data/WADI-CLEAN_X_train_full_l16_seed2026 `
   --prepare-only
 ```
+
+The default `fixed` sampling mode reuses one selected subset across epochs.
+For the pre-registered strong candidates, use deterministic operator-stratified
+rotation instead:
+
+```powershell
+& $python scripts/train.py `
+  --config configs/wadi_s2_dtt_replacement_synth_verbalizer.json `
+  --run-name s2_prepare `
+  --use-synthetic-anomalies --synthetic-samples 170 `
+  --synthetic-sampling epoch_stratified --prepare-only
+```
+
+`epoch_stratified` selects 170 non-overlapping windows per epoch while
+preserving the operator proportions in the full package. A five-epoch run
+therefore sees up to 850 unique synthetic windows without changing the
+per-epoch class ratio. Every epoch's index hash and operator counts are saved
+in `protocol.json`, and the exact schedule is saved as
+`synthetic_epoch_indices.npy`.
+
+Three explicit pure-verbalizer candidate configs are provided:
+
+- `wadi_s1_numeric_synth_verbalizer.json`: all 80 active variables remain
+  numeric MOIRAI tokens.
+- `wadi_s2_dtt_replacement_synth_verbalizer.json`: 54 continuous numeric
+  tokens plus 26 discrete endpoint-state texts.
+- `wadi_s3_dtt_additive_synth_verbalizer.json`: all 80 numeric tokens plus
+  endpoint-state text for the 26 discrete variables.
+
+All three use L=64, MOIRAI Base layer 12, DirectProjector, classifier weight
+zero, verbalizer weight one, and cloud-locked physical/evaluation batch four.
 
 Before concatenation, the loader verifies the normal-train file hash, active
 channel order and types, window length, float32 shape, endpoint masks, labels,

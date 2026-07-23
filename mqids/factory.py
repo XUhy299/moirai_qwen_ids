@@ -73,9 +73,10 @@ def build_model(
     active_descriptions: tuple[str, ...] = (),
     discrete_vocabulary: DiscreteStateVocabulary | None = None,
 ) -> torch.nn.Module:
-    moirai_target_dim = (
-        len(continuous_indices) if config.discrete_to_text else active_variable_count
-    )
+    if config.discrete_to_text and config.dtt_numeric_mode == "continuous_only":
+        moirai_target_dim = len(continuous_indices)
+    else:
+        moirai_target_dim = active_variable_count
     moirai = FrozenMoiraiTokenizer.from_pretrained(
         moirai_model_path(config.moirai_size),
         window_length=config.window_length,
@@ -106,7 +107,11 @@ def build_model(
         qwen_model=qwen,
     ).to(device)
     if config.discrete_to_text:
-        prefix, suffix = dtt_prompt_texts(config.prompt_variant, config.window_length)
+        prefix, suffix = dtt_prompt_texts(
+            config.prompt_variant,
+            config.window_length,
+            config.dtt_numeric_mode,
+        )
     else:
         prefix, suffix = prompt_texts(config.prompt_variant)
     model = MoiraiQwenClassifier(
@@ -126,6 +131,7 @@ def build_model(
         active_names=active_names,
         active_descriptions=active_descriptions,
         semantic_style=config.dtt_semantic_style,
+        dtt_numeric_mode=config.dtt_numeric_mode,
         discrete_vocabulary=discrete_vocabulary,
         continuous_indices=continuous_indices,
         discrete_indices=discrete_indices,

@@ -158,7 +158,7 @@ def run_synthetic(projector_name: str) -> None:
     )
 
 
-def run_synthetic_dtt() -> None:
+def run_synthetic_dtt(numeric_mode: str) -> None:
     """Check aligned variable/token order, endpoint states, padding and gradients."""
     torch.manual_seed(11)
     batch, window = 2, 8
@@ -173,7 +173,7 @@ def run_synthetic_dtt() -> None:
             DiscreteStateSpec(4, 4, "MODE", 2, (0.0, 2.0), (0.0, 2.0), ("状态0", "状态1")),
         ),
     )
-    prefix, suffix = dtt_prompt_texts("process", window)
+    prefix, suffix = dtt_prompt_texts("process", window, numeric_mode)
     model = MoiraiQwenClassifier(
         moirai_tokenizer=FakeMoiraiTokenizer(window, d_moirai),
         qwen_causal_lm=FakeCausalLM(d_llm),
@@ -186,6 +186,7 @@ def run_synthetic_dtt() -> None:
         discrete_to_text=True,
         active_names=("SENSOR_A", "SENSOR_B", "SWITCH_A", "SWITCH_B", "MODE", "SENSOR_C"),
         active_descriptions=("流量传感器A", "液位传感器B", "开关A", "开关B", "模式变量", "压力传感器C"),
+        dtt_numeric_mode=numeric_mode,
         discrete_vocabulary=vocabulary,
         continuous_indices=(0, 1, 5),
         discrete_indices=(2, 3, 4),
@@ -207,12 +208,18 @@ def run_synthetic_dtt() -> None:
         output.classifier_logits, output.verbalizer_logits, torch.tensor([0, 1])
     )["loss"]
     loss.backward()
-    if output.moirai_tokens.shape != (batch, 3, d_moirai):
-        raise AssertionError(f"DTT must tokenize only continuous variables: {output.moirai_tokens.shape}")
+    expected_variables = 3 if numeric_mode == "continuous_only" else 6
+    if output.moirai_tokens.shape != (batch, expected_variables, d_moirai):
+        raise AssertionError(
+            f"Unexpected {numeric_mode} DTT token shape: {output.moirai_tokens.shape}"
+        )
     grads = [p.grad for p in model.projector.parameters() if p.grad is not None]
     if not grads or not any(torch.isfinite(g).all() and g.abs().sum() > 0 for g in grads):
         raise AssertionError("No valid gradient crossed the variable-aligned DTT prompt")
-    print(f"synthetic variable-aligned DTT: OK; loss={loss.item():.4f}")
+    print(
+        f"synthetic variable-aligned DTT ({numeric_mode}): "
+        f"OK; loss={loss.item():.4f}"
+    )
 
 
 def run_real_qwen(device_name: str) -> None:
@@ -297,7 +304,8 @@ def main() -> None:
     args = parser.parse_args()
     for name in ("linear", "direct", "reprogramming"):
         run_synthetic(name)
-    run_synthetic_dtt()
+    for numeric_mode in ("continuous_only", "all_active"):
+        run_synthetic_dtt(numeric_mode)
     if args.real_qwen:
         run_real_qwen(args.device)
 

@@ -455,3 +455,106 @@ class SyntheticWindowDataset(Dataset):
 
     def __del__(self) -> None:
         self.close()
+
+
+def build_stratified_epoch_schedules(
+    operator_codes: Sequence[int] | np.ndarray,
+    *,
+    samples_per_epoch: int,
+    epochs: int,
+    seed: int,
+) -> tuple[np.ndarray, ...]:
+    """Build deterministic, non-overlapping per-epoch synthetic selections.
+
+    Quotas preserve the operator proportions in the full offline package using
+    largest-remainder allocation. An operator pool is never reused across
+    epochs; fail closed when the package cannot support the requested schedule.
+    """
+
+    codes = np.asarray(operator_codes, dtype=np.int64)
+    if codes.ndim != 1 or codes.size == 0:
+        raise ValueError("operator_codes must be a non-empty one-dimensional array")
+    if samples_per_epoch < 1 or epochs < 1:
+        raise ValueError("samples_per_epoch and epochs must be positive")
+    if samples_per_epoch * epochs > len(codes):
+        raise ValueError("Synthetic package is too small for a non-overlapping epoch schedule")
+
+    unique_codes, counts = np.unique(codes, return_counts=True)
+    exact_quotas = counts.astype(np.float64) / counts.sum() * samples_per_epoch
+    quotas = np.floor(exact_quotas).astype(np.int64)
+    remaining = samples_per_epoch - int(quotas.sum())
+    fractional = exact_quotas - quotas
+    order = np.lexsort((unique_codes, -fractional))
+    quotas[order[:remaining]] += 1
+
+    required = quotas * epochs
+    insufficient = [
+        (int(code), int(need), int(available))
+        for code, need, available in zip(unique_codes, required, counts)
+        if need > available
+    ]
+    if insufficient:
+        raise ValueError(
+            "Synthetic operator pools cannot support non-overlapping stratified rotation: "
+            f"{insufficient}"
+        )
+
+    rng = np.random.default_rng(seed)
+    shuffled_by_code = {
+        int(code): rng.permutation(np.flatnonzero(codes == code)).astype(np.int64)
+        for code in unique_codes
+    }
+    schedules: list[np.ndarray] = []
+    for epoch_index in range(epochs):
+        parts = []
+        for code, quota in zip(unique_codes, quotas):
+            start = epoch_index * int(quota)
+            stop = start + int(quota)
+            parts.append(shuffled_by_code[int(code)][start:stop])
+        selected = np.concatenate(parts).astype(np.int64, copy=False)
+        selected = selected[rng.permutation(len(selected))]
+        schedules.append(selected)
+
+    combined = np.concatenate(schedules)
+    if len(np.unique(combined)) != len(combined):
+        raise AssertionError("Epoch-stratified synthetic schedules unexpectedly overlap")
+    return tuple(schedules)
+
+
+class EpochRotatingSyntheticDataset(Dataset):
+    """Expose one deterministic synthetic subset per training epoch."""
+
+    def __init__(
+        self,
+        dataset: SyntheticWindowDataset,
+        schedules: Sequence[Sequence[int] | np.ndarray],
+    ) -> None:
+        if not schedules:
+            raise ValueError("At least one synthetic epoch schedule is required")
+        normalized = tuple(np.asarray(schedule, dtype=np.int64) for schedule in schedules)
+        expected_length = len(normalized[0])
+        if expected_length < 1 or any(len(schedule) != expected_length for schedule in normalized):
+            raise ValueError("All synthetic epoch schedules must have the same positive length")
+        for schedule in normalized:
+            if schedule.ndim != 1:
+                raise ValueError("Synthetic epoch schedules must be one-dimensional")
+            if int(schedule.min()) < 0 or int(schedule.max()) >= len(dataset):
+                raise ValueError("Synthetic epoch schedule contains an out-of-range index")
+        self.dataset = dataset
+        self.schedules = normalized
+        self.epoch_index = 0
+
+    @property
+    def indices(self) -> np.ndarray:
+        return self.schedules[self.epoch_index]
+
+    def set_epoch(self, epoch_index: int) -> None:
+        if epoch_index < 0 or epoch_index >= len(self.schedules):
+            raise ValueError(f"Synthetic epoch index {epoch_index} is out of range")
+        self.epoch_index = int(epoch_index)
+
+    def __len__(self) -> int:
+        return len(self.schedules[0])
+
+    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+        return self.dataset[int(self.indices[index])]

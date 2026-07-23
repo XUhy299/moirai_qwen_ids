@@ -38,6 +38,7 @@ class MoiraiQwenClassifier(nn.Module):
         active_names: tuple[str, ...] = (),
         active_descriptions: tuple[str, ...] = (),
         semantic_style: str = "compact",
+        dtt_numeric_mode: str = "continuous_only",
         discrete_vocabulary: DiscreteStateVocabulary | None = None,
         continuous_indices: tuple[int, ...] = (),
         discrete_indices: tuple[int, ...] = (),
@@ -52,10 +53,18 @@ class MoiraiQwenClassifier(nn.Module):
         self.active_names = active_names
         self.active_descriptions = active_descriptions
         self.semantic_style = semantic_style
+        self.dtt_numeric_mode = dtt_numeric_mode
         self.discrete_vocabulary = discrete_vocabulary
         self.window_length = int(window_length)
         self.continuous_indices = tuple(int(index) for index in continuous_indices)
         self.discrete_indices = tuple(int(index) for index in discrete_indices)
+        if dtt_numeric_mode not in {"continuous_only", "all_active"}:
+            raise ValueError("DTT numeric mode must be continuous_only or all_active")
+        self.numeric_indices = (
+            tuple(range(int(variable_type_ids.numel())))
+            if discrete_to_text and dtt_numeric_mode == "all_active"
+            else self.continuous_indices
+        )
 
         if discrete_to_text:
             if discrete_vocabulary is None:
@@ -73,13 +82,22 @@ class MoiraiQwenClassifier(nn.Module):
             persistent=True,
         )
         self.register_buffer(
+            "_numeric_indices",
+            (
+                torch.tensor(self.numeric_indices, dtype=torch.long)
+                if self.numeric_indices
+                else torch.empty(0, dtype=torch.long)
+            ),
+            persistent=True,
+        )
+        self.register_buffer(
             "_discrete_indices",
             torch.tensor(discrete_indices, dtype=torch.long) if discrete_indices else torch.empty(0, dtype=torch.long),
             persistent=True,
         )
 
         if discrete_to_text:
-            self.num_variables = len(continuous_indices)
+            self.num_variables = len(self.numeric_indices)
         else:
             self.num_variables = int(variable_type_ids.numel())
 
@@ -112,14 +130,14 @@ class MoiraiQwenClassifier(nn.Module):
         discrete_states: list[tuple[str, ...]] | None = None
 
         if self.discrete_to_text:
-            windows_cont = windows[..., self._continuous_indices]
+            windows_numeric = windows[..., self._numeric_indices]
             windows_disc = windows[..., self._discrete_indices]
-            moirai_tokens = self.moirai_tokenizer(windows_cont)
+            moirai_tokens = self.moirai_tokenizer(windows_numeric)
             if moirai_tokens.shape[1] != self.num_variables:
-                raise ValueError("MOIRAI token count does not match continuous variable count")
+                raise ValueError("MOIRAI token count does not match DTT numeric-token count")
             soft_tokens = self.projector(moirai_tokens)
             variable_ids = torch.arange(self.num_variables, device=soft_tokens.device)
-            var_types = self.variable_type_ids[self._continuous_indices]
+            var_types = self.variable_type_ids[self._numeric_indices]
             metadata = self.variable_embedding(variable_ids) + self.type_embedding(var_types)
             soft_tokens = self.fusion_norm(soft_tokens + metadata.unsqueeze(0))
 
@@ -152,7 +170,7 @@ class MoiraiQwenClassifier(nn.Module):
                 active_names=self.active_names,
                 active_descriptions=self.active_descriptions,
                 semantic_style=self.semantic_style,
-                continuous_indices=self.continuous_indices,
+                numeric_indices=self.numeric_indices,
                 discrete_indices=self.discrete_indices,
                 discrete_states=discrete_states,
                 window_length=self.window_length,
