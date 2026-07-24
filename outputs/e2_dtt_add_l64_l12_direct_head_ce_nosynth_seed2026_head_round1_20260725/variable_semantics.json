@@ -1,0 +1,327 @@
+{
+  "rule": "由WADI标签中的工艺段、设备缩写、编号和信号后缀保守解析；Prompt同时保留原始变量ID",
+  "style": "compact",
+  "variables": [
+    {
+      "name": "1_AIT_002_PV",
+      "description": "第一段·分析仪·过程值"
+    },
+    {
+      "name": "1_AIT_003_PV",
+      "description": "第一段·分析仪·过程值"
+    },
+    {
+      "name": "1_FIT_001_PV",
+      "description": "第一段·流量计·过程值"
+    },
+    {
+      "name": "1_LT_001_PV",
+      "description": "第一段·液位计·过程值"
+    },
+    {
+      "name": "1_MV_001_STATUS",
+      "description": "第一段·电动阀·状态"
+    },
+    {
+      "name": "1_MV_004_STATUS",
+      "description": "第一段·电动阀·状态"
+    },
+    {
+      "name": "1_P_001_STATUS",
+      "description": "第一段·泵·状态"
+    },
+    {
+      "name": "1_P_003_STATUS",
+      "description": "第一段·泵·状态"
+    },
+    {
+      "name": "1_P_005_STATUS",
+      "description": "第一段·泵·状态"
+    },
+    {
+      "name": "2_DPIT_001_PV",
+      "description": "第二段·差压计·过程值"
+    },
+    {
+      "name": "2_FIC_101_CO",
+      "description": "第二段·流量控制器·控制输出"
+    },
+    {
+      "name": "2_FIC_101_PV",
+      "description": "第二段·流量控制器·过程值"
+    },
+    {
+      "name": "2_FIC_201_CO",
+      "description": "第二段·流量控制器·控制输出"
+    },
+    {
+      "name": "2_FIC_201_PV",
+      "description": "第二段·流量控制器·过程值"
+    },
+    {
+      "name": "2_FIC_201_SP",
+      "description": "第二段·流量控制器·设定值"
+    },
+    {
+      "name": "2_FIC_301_CO",
+      "description": "第二段·流量控制器·控制输出"
+    },
+    {
+      "name": "2_FIC_301_PV",
+      "description": "第二段·流量控制器·过程值"
+    },
+    {
+      "name": "2_FIC_301_SP",
+      "description": "第二段·流量控制器·设定值"
+    },
+    {
+      "name": "2_FIC_401_CO",
+      "description": "第二段·流量控制器·控制输出"
+    },
+    {
+      "name": "2_FIC_401_PV",
+      "description": "第二段·流量控制器·过程值"
+    },
+    {
+      "name": "2_FIC_401_SP",
+      "description": "第二段·流量控制器·设定值"
+    },
+    {
+      "name": "2_FIC_501_CO",
+      "description": "第二段·流量控制器·控制输出"
+    },
+    {
+      "name": "2_FIC_501_PV",
+      "description": "第二段·流量控制器·过程值"
+    },
+    {
+      "name": "2_FIC_501_SP",
+      "description": "第二段·流量控制器·设定值"
+    },
+    {
+      "name": "2_FIC_601_CO",
+      "description": "第二段·流量控制器·控制输出"
+    },
+    {
+      "name": "2_FIC_601_PV",
+      "description": "第二段·流量控制器·过程值"
+    },
+    {
+      "name": "2_FIC_601_SP",
+      "description": "第二段·流量控制器·设定值"
+    },
+    {
+      "name": "2_FIT_001_PV",
+      "description": "第二段·流量计·过程值"
+    },
+    {
+      "name": "2_FIT_002_PV",
+      "description": "第二段·流量计·过程值"
+    },
+    {
+      "name": "2_FIT_003_PV",
+      "description": "第二段·流量计·过程值"
+    },
+    {
+      "name": "2_FQ_101_PV",
+      "description": "第二段·累计流量·过程值"
+    },
+    {
+      "name": "2_FQ_201_PV",
+      "description": "第二段·累计流量·过程值"
+    },
+    {
+      "name": "2_FQ_301_PV",
+      "description": "第二段·累计流量·过程值"
+    },
+    {
+      "name": "2_FQ_401_PV",
+      "description": "第二段·累计流量·过程值"
+    },
+    {
+      "name": "2_FQ_501_PV",
+      "description": "第二段·累计流量·过程值"
+    },
+    {
+      "name": "2_FQ_601_PV",
+      "description": "第二段·累计流量·过程值"
+    },
+    {
+      "name": "2_LS_101_AH",
+      "description": "第二段·液位开关·高位报警"
+    },
+    {
+      "name": "2_LS_101_AL",
+      "description": "第二段·液位开关·低位报警"
+    },
+    {
+      "name": "2_LS_201_AH",
+      "description": "第二段·液位开关·高位报警"
+    },
+    {
+      "name": "2_LS_201_AL",
+      "description": "第二段·液位开关·低位报警"
+    },
+    {
+      "name": "2_LS_301_AH",
+      "description": "第二段·液位开关·高位报警"
+    },
+    {
+      "name": "2_LS_301_AL",
+      "description": "第二段·液位开关·低位报警"
+    },
+    {
+      "name": "2_LS_401_AH",
+      "description": "第二段·液位开关·高位报警"
+    },
+    {
+      "name": "2_LS_401_AL",
+      "description": "第二段·液位开关·低位报警"
+    },
+    {
+      "name": "2_LS_501_AH",
+      "description": "第二段·液位开关·高位报警"
+    },
+    {
+      "name": "2_LS_501_AL",
+      "description": "第二段·液位开关·低位报警"
+    },
+    {
+      "name": "2_LS_601_AH",
+      "description": "第二段·液位开关·高位报警"
+    },
+    {
+      "name": "2_LS_601_AL",
+      "description": "第二段·液位开关·低位报警"
+    },
+    {
+      "name": "2_LT_002_PV",
+      "description": "第二段·液位计·过程值"
+    },
+    {
+      "name": "2_MCV_101_CO",
+      "description": "第二段·调节阀·控制输出"
+    },
+    {
+      "name": "2_MCV_201_CO",
+      "description": "第二段·调节阀·控制输出"
+    },
+    {
+      "name": "2_MCV_301_CO",
+      "description": "第二段·调节阀·控制输出"
+    },
+    {
+      "name": "2_MCV_401_CO",
+      "description": "第二段·调节阀·控制输出"
+    },
+    {
+      "name": "2_MCV_501_CO",
+      "description": "第二段·调节阀·控制输出"
+    },
+    {
+      "name": "2_MCV_601_CO",
+      "description": "第二段·调节阀·控制输出"
+    },
+    {
+      "name": "2_MV_003_STATUS",
+      "description": "第二段·电动阀·状态"
+    },
+    {
+      "name": "2_MV_006_STATUS",
+      "description": "第二段·电动阀·状态"
+    },
+    {
+      "name": "2_MV_101_STATUS",
+      "description": "第二段·电动阀·状态"
+    },
+    {
+      "name": "2_MV_201_STATUS",
+      "description": "第二段·电动阀·状态"
+    },
+    {
+      "name": "2_MV_301_STATUS",
+      "description": "第二段·电动阀·状态"
+    },
+    {
+      "name": "2_MV_401_STATUS",
+      "description": "第二段·电动阀·状态"
+    },
+    {
+      "name": "2_MV_501_STATUS",
+      "description": "第二段·电动阀·状态"
+    },
+    {
+      "name": "2_MV_601_STATUS",
+      "description": "第二段·电动阀·状态"
+    },
+    {
+      "name": "2_P_003_SPEED",
+      "description": "第二段·泵·速度"
+    },
+    {
+      "name": "2_P_003_STATUS",
+      "description": "第二段·泵·状态"
+    },
+    {
+      "name": "2_P_004_SPEED",
+      "description": "第二段·泵·速度"
+    },
+    {
+      "name": "2_PIC_003_CO",
+      "description": "第二段·压力控制器·控制输出"
+    },
+    {
+      "name": "2_PIC_003_PV",
+      "description": "第二段·压力控制器·过程值"
+    },
+    {
+      "name": "2_PIT_001_PV",
+      "description": "第二段·压力计·过程值"
+    },
+    {
+      "name": "2_PIT_002_PV",
+      "description": "第二段·压力计·过程值"
+    },
+    {
+      "name": "2_PIT_003_PV",
+      "description": "第二段·压力计·过程值"
+    },
+    {
+      "name": "2A_AIT_002_PV",
+      "description": "第二段A支路·分析仪·过程值"
+    },
+    {
+      "name": "2B_AIT_003_PV",
+      "description": "第二段B支路·分析仪·过程值"
+    },
+    {
+      "name": "3_AIT_001_PV",
+      "description": "第三段·分析仪·过程值"
+    },
+    {
+      "name": "3_AIT_003_PV",
+      "description": "第三段·分析仪·过程值"
+    },
+    {
+      "name": "3_AIT_004_PV",
+      "description": "第三段·分析仪·过程值"
+    },
+    {
+      "name": "3_FIT_001_PV",
+      "description": "第三段·流量计·过程值"
+    },
+    {
+      "name": "3_LT_001_PV",
+      "description": "第三段·液位计·过程值"
+    },
+    {
+      "name": "LEAK_DIFF_PRESSURE",
+      "description": "管网泄漏差压指标"
+    },
+    {
+      "name": "TOTAL_CONS_REQUIRED_FLOW",
+      "description": "用户侧总需求流量"
+    }
+  ],
+  "sha256": "99c45522887106688aac6fd21c1a3d41f4e6ae07bd8522788008bfa5e106172d"
+}
