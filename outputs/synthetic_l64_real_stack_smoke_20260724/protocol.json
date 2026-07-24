@@ -1,0 +1,81 @@
+{
+  "description": "single-attack-event supervised transfer with train-only synthetic anomalies",
+  "smoke": true,
+  "opened_data_files": {
+    "train_x": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/WADI-CLEAN_X_train.npy",
+    "validation_x": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/val_test/WADI-CLEAN_X_test_val.npy",
+    "validation_y": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/val_test/WADI-CLEAN_Y_test_val.npy",
+    "sensor_names": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/WADI-CLEAN_sensor_cols.txt",
+    "train_fitted_scaler": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/WADI-CLEAN_scaler.pkl",
+    "synthetic_anomaly_package": "C:/Users/83509/Desktop/biye_project/timemodel/moirai_qwen_ids/synthetic_data/WADI-CLEAN_X_train_full_l64_seed2026",
+    "test_x": null,
+    "test_y": null
+  },
+  "locked_test_files_opened": [],
+  "train_normal_windows": 2,
+  "train_anomaly_windows": 4,
+  "train_real_anomaly_windows": 2,
+  "train_synthetic_anomaly_windows": 2,
+  "train_total_windows": 6,
+  "dev_windows": 4,
+  "effective_train_batch_size": 1,
+  "effective_eval_batch_size": 1,
+  "normal_endpoint_sha256": "d6b42a973427d0de3d878b338411332b7bdeb6a6679a86e0947b3d37cbc6e6e0",
+  "anomaly_endpoint_sha256": "156046c4cf5ea6818b8b3b3d301d73bd843b5785f39216b3ad444d8e285d7b27",
+  "synthetic_selection_sha256": "f1ca09680d4e242f5a6dbd0b06f5e8fdf2f26f3f198a8ad0d5cb383e7dbb993e",
+  "dev_endpoint_sha256": "5d2126c691c23c06ed82ef2887bda7057a877ae212491ab236ac05126fd71955",
+  "dev_stride": 8,
+  "formal_endpoint_stride": 1,
+  "common_min_endpoint": 127,
+  "attack_run": [
+    5139,
+    6625
+  ],
+  "support_endpoint_range": [
+    5139,
+    5143
+  ],
+  "query_endpoint_range": [
+    5946,
+    6624
+  ],
+  "excluded_guard": [
+    5818,
+    5946
+  ],
+  "endpoint_label_rule": "Y[window_end]",
+  "classifier_loss_weight": 1.0,
+  "vocab_loss_weight": 0.0,
+  "moirai_encoder_layer": 12,
+  "prompt_variant": "process",
+  "discrete_to_text": true,
+  "prompt_layout": "variable_aligned_semantic_chat_dtt_v3",
+  "qwen_chat_template_applied": true,
+  "qwen_thinking_enabled": false,
+  "dtt_semantic_style": "compact",
+  "full_run_authorized": false,
+  "synthetic_anomalies": {
+    "enabled": true,
+    "package_available_windows": 5000,
+    "requested_windows": 2,
+    "selected_windows": 2,
+    "smoke_cap_applied": false,
+    "package_input_x_sha256": "e46eecece7485cebe3aed544dbc9039fc9e657385521ea6a071d59ce231565de",
+    "package_operator_counts": {
+      "dependency_break": 760,
+      "flatline": 693,
+      "shift_ramp": 1266,
+      "soft_patch_replacement": 1527,
+      "spike": 754
+    },
+    "selected_operator_counts": {
+      "shift_ramp": 1,
+      "soft_patch_replacement": 1
+    },
+    "endpoint_label_rule": "point_masks[:, -1] == true",
+    "selection_index_sha256": "f1ca09680d4e242f5a6dbd0b06f5e8fdf2f26f3f198a8ad0d5cb383e7dbb993e"
+  },
+  "variable_semantics_sha256": "99c45522887106688aac6fd21c1a3d41f4e6ae07bd8522788008bfa5e106172d",
+  "discrete_state_vocabulary_sha256": "434dde28751cdced37b7e9b7a9182873c539cdd2a37b002fce234009abed6f53",
+  "limitation": "Support and query are chronological portions of the same attack event."
+}

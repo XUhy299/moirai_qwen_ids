@@ -1,0 +1,10 @@
+{
+  "python_executable": "C:\\Users\\83509\\Desktop\\python project\\.venv\\Scripts\\python.exe",
+  "python_version": "3.11.9",
+  "torch_version": "2.4.1+cu121",
+  "transformers_version": "4.51.3",
+  "cuda_available": true,
+  "cuda_version": "12.1",
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 4060 Laptop GPU"
+}

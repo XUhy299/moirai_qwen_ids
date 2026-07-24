@@ -1,0 +1,39 @@
+{
+  "epochs": [
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 0.849929466843605,
+        "classifier_loss": 0.849929466843605,
+        "verbalizer_loss": 0.6148445680737495,
+        "seconds": 3.465450100000453
+      },
+      "dev": {
+        "roc_auc": 0.75,
+        "pr_auc": 0.8333333333333333,
+        "vocab_roc_auc": 0.125,
+        "vocab_pr_auc": 0.41666666666666663,
+        "threshold": 0.6592954993247986,
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1": 0.8,
+        "false_positive_rate": 0.5,
+        "false_negative_rate": 0.0,
+        "examples": 4,
+        "anomalies": 2,
+        "endpoints_min": 127,
+        "endpoints_max": 5947,
+        "seconds": 1.1775582999998733,
+        "vocab_threshold": 0.29421496391296387,
+        "vocab_precision": 0.5,
+        "vocab_recall": 1.0,
+        "vocab_f1": 0.6666666666666666,
+        "vocab_false_positive_rate": 1.0,
+        "vocab_false_negative_rate": 0.0
+      },
+      "peak_cuda_memory_mb": 4630.71826171875,
+      "selection_metric": "pr_auc",
+      "selection_score": 0.8333333333333333
+    }
+  ]
+}

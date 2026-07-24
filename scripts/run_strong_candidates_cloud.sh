@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Sequential cloud launcher for the three pre-registered strong candidates.
-# This script reuses scripts/train.py for every run and never opens locked test
-# data. Override behavior with environment variables documented below.
+# Sequential cloud launcher for the classifier-head development round.
+#
+# Default candidates:
+#   e1: all 80 numeric tokens + train-only synthetic anomalies + classifier CE
+#   e2: all 80 numeric tokens + additive compact DTT, no synthetic + classifier CE
+#
+# The combined e3 candidate is available but intentionally gated until e1 and
+# e2 have each been reviewed. This script always reuses scripts/train.py and
+# never opens locked test data.
 
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
@@ -11,15 +17,48 @@ cd "$PROJECT_ROOT"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 DEVICE="${DEVICE:-cuda}"
 SEEDS="${SEEDS:-2026 2027 2028}"
-CANDIDATES="${CANDIDATES:-s1 s2 s3}"
+CANDIDATES="${CANDIDATES:-e1 e2}"
+BASE_CONFIG="${BASE_CONFIG:-configs/wadi_qwen3_06b.json}"
+BATCH_SIZE="${BATCH_SIZE:-4}"
+EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-4}"
 SYNTHETIC_SAMPLES="${SYNTHETIC_SAMPLES:-170}"
 SYNTHETIC_DATA_DIR="${SYNTHETIC_DATA_DIR:-$PROJECT_ROOT/synthetic_data/WADI-CLEAN_X_train_full_l64_seed2026}"
 RUN_TAG="${RUN_TAG:-$(date +%Y%m%d)}"
-LOG_ROOT="${LOG_ROOT:-$PROJECT_ROOT/cloud_logs/strong_candidates_$RUN_TAG}"
+LOG_ROOT="${LOG_ROOT:-$PROJECT_ROOT/cloud_logs/classifier_candidates_$RUN_TAG}"
 HEARTBEAT_SECONDS="${HEARTBEAT_SECONDS:-60}"
 DRY_RUN="${DRY_RUN:-0}"
+ALLOW_COMBINED_CANDIDATE="${ALLOW_COMBINED_CANDIDATE:-0}"
 
 mkdir -p "$LOG_ROOT"
+
+candidate_slug() {
+  case "$1" in
+    e1) echo "e1_numeric_l64_l12_direct_head_ce_synrot${SYNTHETIC_SAMPLES}" ;;
+    e2) echo "e2_dtt_add_l64_l12_direct_head_ce_nosynth" ;;
+    e3) echo "e3_dtt_add_l64_l12_direct_head_ce_synrot${SYNTHETIC_SAMPLES}" ;;
+    *)
+      echo "Unknown candidate '$1'; expected e1, e2, or e3." >&2
+      return 1
+      ;;
+  esac
+}
+
+candidate_description() {
+  case "$1" in
+    e1) echo "80 numeric tokens + classifier CE + synthetic anomalies" ;;
+    e2) echo "80 numeric tokens + additive compact DTT + classifier CE, no synthetic" ;;
+    e3) echo "80 numeric tokens + additive compact DTT + classifier CE + synthetic anomalies" ;;
+    *) return 1 ;;
+  esac
+}
+
+candidate_uses_dtt() {
+  [[ "$1" == "e2" || "$1" == "e3" ]]
+}
+
+candidate_uses_synthetic() {
+  [[ "$1" == "e1" || "$1" == "e3" ]]
+}
 
 required_package_files=(
   synthetic_windows.npy
@@ -37,13 +76,6 @@ if [[ ! -x "$(command -v "$PYTHON_BIN" 2>/dev/null || true)" ]]; then
   exit 1
 fi
 
-for file_name in "${required_package_files[@]}"; do
-  if [[ ! -f "$SYNTHETIC_DATA_DIR/$file_name" ]]; then
-    echo "Synthetic package is incomplete: $SYNTHETIC_DATA_DIR/$file_name" >&2
-    exit 1
-  fi
-done
-
 read -r -a seed_list <<< "$SEEDS"
 read -r -a candidate_list <<< "$CANDIDATES"
 if [[ ${#seed_list[@]} -eq 0 || ${#candidate_list[@]} -eq 0 ]]; then
@@ -51,26 +83,41 @@ if [[ ${#seed_list[@]} -eq 0 || ${#candidate_list[@]} -eq 0 ]]; then
   exit 1
 fi
 
-candidate_config() {
-  case "$1" in
-    s1) echo "configs/wadi_s1_numeric_synth_verbalizer.json" ;;
-    s2) echo "configs/wadi_s2_dtt_replacement_synth_verbalizer.json" ;;
-    s3) echo "configs/wadi_s3_dtt_additive_synth_verbalizer.json" ;;
-    *)
-      echo "Unknown candidate '$1'; expected s1, s2, or s3." >&2
-      return 1
-      ;;
-  esac
-}
+if [[ ! "$BATCH_SIZE" =~ ^[1-9][0-9]*$ || ! "$EVAL_BATCH_SIZE" =~ ^[1-9][0-9]*$ ]]; then
+  echo "BATCH_SIZE and EVAL_BATCH_SIZE must be positive integers." >&2
+  exit 1
+fi
 
-candidate_slug() {
-  case "$1" in
-    s1) echo "numeric" ;;
-    s2) echo "dtt_replace" ;;
-    s3) echo "dtt_add" ;;
-    *) return 1 ;;
-  esac
-}
+if [[ ! -f "$PROJECT_ROOT/$BASE_CONFIG" ]]; then
+  echo "Base config is missing: $PROJECT_ROOT/$BASE_CONFIG" >&2
+  exit 1
+fi
+
+needs_synthetic=0
+for candidate in "${candidate_list[@]}"; do
+  candidate_slug "$candidate" >/dev/null
+  if [[ "$candidate" == "e3" && "$ALLOW_COMBINED_CANDIDATE" != "1" ]]; then
+    echo "Candidate e3 is gated until e1 and e2 have each been reviewed." >&2
+    echo "After that review, rerun with ALLOW_COMBINED_CANDIDATE=1 CANDIDATES=e3." >&2
+    exit 1
+  fi
+  if candidate_uses_synthetic "$candidate"; then
+    needs_synthetic=1
+  fi
+done
+
+if [[ "$needs_synthetic" == "1" ]]; then
+  if [[ ! "$SYNTHETIC_SAMPLES" =~ ^[1-9][0-9]*$ ]]; then
+    echo "SYNTHETIC_SAMPLES must be a positive integer." >&2
+    exit 1
+  fi
+  for file_name in "${required_package_files[@]}"; do
+    if [[ ! -f "$SYNTHETIC_DATA_DIR/$file_name" ]]; then
+      echo "Synthetic package is incomplete: $SYNTHETIC_DATA_DIR/$file_name" >&2
+      exit 1
+    fi
+  done
+fi
 
 heartbeat_pid=""
 cleanup_heartbeat() {
@@ -117,27 +164,26 @@ run_logged() {
 echo "Project root: $PROJECT_ROOT"
 echo "Seeds: $SEEDS"
 echo "Candidates: $CANDIDATES"
-echo "Synthetic package: $SYNTHETIC_DATA_DIR"
-echo "Synthetic windows per epoch: $SYNTHETIC_SAMPLES"
+echo "Base config: $BASE_CONFIG"
+echo "Physical/evaluation batch: $BATCH_SIZE/$EVAL_BATCH_SIZE"
+if [[ "$needs_synthetic" == "1" ]]; then
+  echo "Synthetic package: $SYNTHETIC_DATA_DIR"
+  echo "Synthetic windows per epoch: $SYNTHETIC_SAMPLES"
+fi
 echo "Logs: $LOG_ROOT"
 echo "Dry run: $DRY_RUN"
 
-# Seed is the outer loop so every completed group contains paired S1/S2/S3
-# results with identical seed-dependent endpoint and synthetic schedules.
+# Seed is the outer loop so every completed group contains paired candidate
+# results with identical seed-dependent endpoint sampling.
 for seed in "${seed_list[@]}"; do
   if [[ ! "$seed" =~ ^[0-9]+$ ]]; then
     echo "Invalid seed: $seed" >&2
     exit 1
   fi
   for candidate in "${candidate_list[@]}"; do
-    config="$(candidate_config "$candidate")"
     slug="$(candidate_slug "$candidate")"
-    if [[ ! -f "$PROJECT_ROOT/$config" ]]; then
-      echo "Candidate config is missing: $PROJECT_ROOT/$config" >&2
-      exit 1
-    fi
-
-    run_name="${candidate}_${slug}_l64_l12_direct_vonly_synrot${SYNTHETIC_SAMPLES}_seed${seed}_${RUN_TAG}"
+    description="$(candidate_description "$candidate")"
+    run_name="${slug}_seed${seed}_${RUN_TAG}"
     output_dir="$PROJECT_ROOT/outputs/$run_name"
     log_file="$LOG_ROOT/$run_name.log"
 
@@ -149,19 +195,40 @@ for seed in "${seed_list[@]}"; do
 
     command=(
       "$PYTHON_BIN" -u scripts/train.py
-      --config "$config"
+      --config "$BASE_CONFIG"
       --run-name "$run_name"
       --seed "$seed"
-      --use-synthetic-anomalies
-      --synthetic-data-dir "$SYNTHETIC_DATA_DIR"
-      --synthetic-samples "$SYNTHETIC_SAMPLES"
-      --synthetic-sampling epoch_stratified
+      --window-length 64
+      --moirai-layer 12
+      --projector direct
+      --classifier-loss-weight 1
+      --vocab-loss-weight 0
+      --batch-size "$BATCH_SIZE"
+      --eval-batch-size "$EVAL_BATCH_SIZE"
+      --prompt-variant process
       --full-run-authorized
       --device "$DEVICE"
     )
 
+    if candidate_uses_dtt "$candidate"; then
+      command+=(
+        --discrete-to-text
+        --dtt-semantic-style compact
+        --dtt-numeric-mode all_active
+      )
+    fi
+    if candidate_uses_synthetic "$candidate"; then
+      command+=(
+        --use-synthetic-anomalies
+        --synthetic-data-dir "$SYNTHETIC_DATA_DIR"
+        --synthetic-samples "$SYNTHETIC_SAMPLES"
+        --synthetic-sampling epoch_stratified
+      )
+    fi
+
     echo
     echo "Starting candidate=$candidate seed=$seed run=$run_name"
+    echo "Definition: $description"
     if ! run_logged "$log_file" "${command[@]}"; then
       echo "Run failed: $run_name" >&2
       echo "Inspect log: $log_file" >&2

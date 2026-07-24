@@ -1,0 +1,64 @@
+{
+  "description": "single-attack-event supervised transfer",
+  "smoke": false,
+  "opened_data_files": {
+    "train_x": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/WADI-CLEAN_X_train.npy",
+    "validation_x": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/val_test/WADI-CLEAN_X_test_val.npy",
+    "validation_y": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/val_test/WADI-CLEAN_Y_test_val.npy",
+    "sensor_names": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/WADI-CLEAN_sensor_cols.txt",
+    "train_fitted_scaler": "C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/WADI-CLEAN_scaler.pkl",
+    "synthetic_anomaly_package": null,
+    "test_x": null,
+    "test_y": null
+  },
+  "locked_test_files_opened": [],
+  "train_normal_windows": 510,
+  "train_anomaly_windows": 170,
+  "train_real_anomaly_windows": 170,
+  "train_synthetic_anomaly_windows": 0,
+  "train_total_windows": 680,
+  "dev_windows": 6364,
+  "effective_train_batch_size": 4,
+  "effective_eval_batch_size": 4,
+  "normal_endpoint_sha256": "b5ec683a13c6f33406cc80dfe59dad024abeb38a764287a5c1dbb54837772f2b",
+  "anomaly_endpoint_sha256": "cb951d48829ee3dcc6282e831d21fb970884feef210724ec1cd3a8349fa928c8",
+  "synthetic_selection_sha256": null,
+  "dev_endpoint_sha256": "ef3a91535f7f8c224e2eacb74d5a33eab0cc4cbca317a49100563d3e94daf3ea",
+  "dev_stride": 8,
+  "formal_endpoint_stride": 1,
+  "common_min_endpoint": 127,
+  "attack_run": [
+    5139,
+    6625
+  ],
+  "support_endpoint_range": [
+    5139,
+    5815
+  ],
+  "query_endpoint_range": [
+    5946,
+    6624
+  ],
+  "excluded_guard": [
+    5818,
+    5946
+  ],
+  "endpoint_label_rule": "Y[window_end]",
+  "classifier_loss_weight": 0.0,
+  "vocab_loss_weight": 1.0,
+  "moirai_encoder_layer": 12,
+  "prompt_variant": "process",
+  "discrete_to_text": false,
+  "prompt_layout": "legacy_token_block",
+  "qwen_chat_template_applied": false,
+  "qwen_thinking_enabled": null,
+  "dtt_semantic_style": null,
+  "dtt_numeric_mode": null,
+  "full_run_authorized": false,
+  "synthetic_anomalies": {
+    "enabled": false
+  },
+  "variable_semantics_sha256": null,
+  "discrete_state_vocabulary_sha256": null,
+  "limitation": "Support and query are chronological portions of the same attack event."
+}

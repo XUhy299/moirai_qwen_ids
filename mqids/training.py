@@ -197,7 +197,14 @@ def write_run_markdown(
 ) -> None:
     """Write a human-readable companion to the machine-readable run artifacts."""
     output_dir = Path(output_dir)
-    selection_metric = "vocab_pr_auc" if config.get("classifier_loss_weight") == 0 else "pr_auc"
+    verbalizer_is_primary = config.get("classifier_loss_weight") == 0
+    selection_metric = "vocab_pr_auc" if verbalizer_is_primary else "pr_auc"
+    primary_output = "verbalizer" if verbalizer_is_primary else "classifier"
+    metric_prefix = "vocab_" if verbalizer_is_primary else ""
+
+    def primary_metric(dev: dict[str, object], name: str) -> object:
+        return dev.get(f"{metric_prefix}{name}")
+
     selected = None
     if history:
         selected = max(
@@ -234,6 +241,7 @@ def write_run_markdown(
         f"| Projector | {config.get('projector')} |",
         f"| 分类损失权重 | {config.get('classifier_loss_weight')} |",
         f"| 词表损失权重 | {config.get('vocab_loss_weight')} |",
+        f"| 主评估输出 | {primary_output} |",
         f"| 配置 Epochs / 实际完成 | {config.get('epochs')} / {len(history)} |",
         f"| 学习率 | {config.get('learning_rate')} |",
         f"| DTT语义样式 | {protocol.get('dtt_semantic_style')} |",
@@ -274,13 +282,13 @@ def write_run_markdown(
             "{fpr} | {threshold} | {train_s} | {dev_s} |".format(
                 epoch=row["epoch"],
                 loss=_format_metric(train.get("loss")),
-                roc=_format_metric(dev.get("roc_auc")),
-                pr=_format_metric(dev.get("pr_auc")),
-                precision=_format_metric(dev.get("precision")),
-                recall=_format_metric(dev.get("recall")),
-                f1=_format_metric(dev.get("f1")),
-                fpr=_format_metric(dev.get("false_positive_rate")),
-                threshold=_format_metric(dev.get("threshold")),
+                roc=_format_metric(primary_metric(dev, "roc_auc")),
+                pr=_format_metric(primary_metric(dev, "pr_auc")),
+                precision=_format_metric(primary_metric(dev, "precision")),
+                recall=_format_metric(primary_metric(dev, "recall")),
+                f1=_format_metric(primary_metric(dev, "f1")),
+                fpr=_format_metric(primary_metric(dev, "false_positive_rate")),
+                threshold=_format_metric(primary_metric(dev, "threshold")),
                 train_s=_format_metric(train.get("seconds")),
                 dev_s=_format_metric(dev.get("seconds")),
             )
@@ -297,12 +305,14 @@ def write_run_markdown(
                 f"- Epoch：{selected['epoch']}",
                 f"- 选模指标 `{selection_metric}`："
                 f"{_format_metric(selected.get('selection_score', dev.get(selection_metric)))}",
-                f"- ROC-AUC：{_format_metric(dev.get('roc_auc'))}",
-                f"- PR-AUC：{_format_metric(dev.get('pr_auc'))}",
-                f"- Precision / Recall / F1：{_format_metric(dev.get('precision'))} / "
-                f"{_format_metric(dev.get('recall'))} / {_format_metric(dev.get('f1'))}",
-                f"- FPR / FNR：{_format_metric(dev.get('false_positive_rate'))} / "
-                f"{_format_metric(dev.get('false_negative_rate'))}",
+                f"- 主评估输出：{primary_output}",
+                f"- ROC-AUC：{_format_metric(primary_metric(dev, 'roc_auc'))}",
+                f"- PR-AUC：{_format_metric(primary_metric(dev, 'pr_auc'))}",
+                f"- Precision / Recall / F1：{_format_metric(primary_metric(dev, 'precision'))} / "
+                f"{_format_metric(primary_metric(dev, 'recall'))} / "
+                f"{_format_metric(primary_metric(dev, 'f1'))}",
+                f"- FPR / FNR：{_format_metric(primary_metric(dev, 'false_positive_rate'))} / "
+                f"{_format_metric(primary_metric(dev, 'false_negative_rate'))}",
                 f"- 峰值CUDA显存：{_format_metric(selected.get('peak_cuda_memory_mb'))} MB",
             ]
         )

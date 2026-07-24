@@ -1,0 +1,505 @@
+{
+  "source": "normal_train=C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/WADI-CLEAN_X_train.npy; scaler=C:/Users/83509/Desktop/biye_project/timemodel/ics-anomaly-detection/exported_data/WADI-CLEAN_scaler.pkl",
+  "unknown_state_rule": "训练期词表中无匹配值时输出未知状态及原始值；不得按窗口重新编号",
+  "variables": [
+    {
+      "active_position": 4,
+      "original_index": 6,
+      "name": "1_MV_001_STATUS",
+      "type_id": 2,
+      "values": [
+        -2.832319703326807,
+        -0.602536769896752,
+        1.627246163533303
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 5,
+      "original_index": 9,
+      "name": "1_MV_004_STATUS",
+      "type_id": 2,
+      "values": [
+        -2.8210010400368275,
+        -0.6159300086840231,
+        1.5891410226687812
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 6,
+      "original_index": 10,
+      "name": "1_P_001_STATUS",
+      "type_id": 1,
+      "values": [
+        -0.6144029442265859,
+        1.6275963671671625
+      ],
+      "raw_values": [
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "停止",
+        "运行"
+      ]
+    },
+    {
+      "active_position": 7,
+      "original_index": 12,
+      "name": "1_P_003_STATUS",
+      "type_id": 1,
+      "values": [
+        -0.6144029442265859,
+        1.6275963671671625
+      ],
+      "raw_values": [
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "停止",
+        "运行"
+      ]
+    },
+    {
+      "active_position": 8,
+      "original_index": 14,
+      "name": "1_P_005_STATUS",
+      "type_id": 1,
+      "values": [
+        -0.5435842190984247,
+        1.8396413377462932
+      ],
+      "raw_values": [
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "停止",
+        "运行"
+      ]
+    },
+    {
+      "active_position": 36,
+      "original_index": 43,
+      "name": "2_LS_101_AH",
+      "type_id": 1,
+      "values": [
+        -0.044391891505216996,
+        22.52663642148427
+      ],
+      "raw_values": [
+        0.0,
+        1.0
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 37,
+      "original_index": 44,
+      "name": "2_LS_101_AL",
+      "type_id": 1,
+      "values": [
+        -0.0641345582849222,
+        15.592217779959311
+      ],
+      "raw_values": [
+        0.0,
+        1.0
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 38,
+      "original_index": 45,
+      "name": "2_LS_201_AH",
+      "type_id": 1,
+      "values": [
+        -0.03719352507072534,
+        26.88640020268178
+      ],
+      "raw_values": [
+        0.0,
+        1.0
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 39,
+      "original_index": 46,
+      "name": "2_LS_201_AL",
+      "type_id": 1,
+      "values": [
+        -0.0555417096411972,
+        18.00448719457971
+      ],
+      "raw_values": [
+        0.0,
+        1.0
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 40,
+      "original_index": 47,
+      "name": "2_LS_301_AH",
+      "type_id": 1,
+      "values": [
+        -0.05578082729488803,
+        17.927306719806353
+      ],
+      "raw_values": [
+        0.0,
+        1.0
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 41,
+      "original_index": 48,
+      "name": "2_LS_301_AL",
+      "type_id": 1,
+      "values": [
+        -0.053357616868333055,
+        18.741466705074746
+      ],
+      "raw_values": [
+        0.0,
+        1.0000000000000002
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 42,
+      "original_index": 49,
+      "name": "2_LS_401_AH",
+      "type_id": 1,
+      "values": [
+        -0.04192112187929562,
+        23.85432343340716
+      ],
+      "raw_values": [
+        0.0,
+        0.9999999999999999
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 43,
+      "original_index": 50,
+      "name": "2_LS_401_AL",
+      "type_id": 1,
+      "values": [
+        -0.06260244190054945,
+        15.973817787948352
+      ],
+      "raw_values": [
+        0.0,
+        1.0
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 44,
+      "original_index": 51,
+      "name": "2_LS_501_AH",
+      "type_id": 1,
+      "values": [
+        -0.051728032331023625,
+        19.33187780274906
+      ],
+      "raw_values": [
+        0.0,
+        0.9999999999999999
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 45,
+      "original_index": 52,
+      "name": "2_LS_501_AL",
+      "type_id": 1,
+      "values": [
+        -0.05461297622557315,
+        18.31066660548961
+      ],
+      "raw_values": [
+        0.0,
+        1.0
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 46,
+      "original_index": 53,
+      "name": "2_LS_601_AH",
+      "type_id": 1,
+      "values": [
+        -0.09332894998879257,
+        10.714788927980905
+      ],
+      "raw_values": [
+        0.0,
+        1.0
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 47,
+      "original_index": 54,
+      "name": "2_LS_601_AL",
+      "type_id": 1,
+      "values": [
+        -0.055706211924604086,
+        17.951319349329545
+      ],
+      "raw_values": [
+        0.0,
+        0.9999999999999999
+      ],
+      "state_names": [
+        "未触发",
+        "触发"
+      ]
+    },
+    {
+      "active_position": 55,
+      "original_index": 65,
+      "name": "2_MV_003_STATUS",
+      "type_id": 2,
+      "values": [
+        -2.792691058780459,
+        -0.500364017805518,
+        1.791963023169423
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 56,
+      "original_index": 68,
+      "name": "2_MV_006_STATUS",
+      "type_id": 2,
+      "values": [
+        -2.970952350802464,
+        -0.39896036487958414,
+        2.1730316210432954
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 57,
+      "original_index": 70,
+      "name": "2_MV_101_STATUS",
+      "type_id": 2,
+      "values": [
+        -2.9297815573067387,
+        -0.9312271228474158,
+        1.067327311611907
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 58,
+      "original_index": 71,
+      "name": "2_MV_201_STATUS",
+      "type_id": 2,
+      "values": [
+        -3.0177382410271525,
+        -1.0228136279277764,
+        0.9721109851715998
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 59,
+      "original_index": 72,
+      "name": "2_MV_301_STATUS",
+      "type_id": 2,
+      "values": [
+        -3.1726158953600416,
+        -1.1561401467514913,
+        0.8603356018570592
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 60,
+      "original_index": 73,
+      "name": "2_MV_401_STATUS",
+      "type_id": 2,
+      "values": [
+        -2.870735247887854,
+        -0.8527569508271492,
+        1.1652213462335557
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 61,
+      "original_index": 74,
+      "name": "2_MV_501_STATUS",
+      "type_id": 2,
+      "values": [
+        -2.9967223518210293,
+        -1.0019972710461562,
+        0.9927278097287169
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 62,
+      "original_index": 75,
+      "name": "2_MV_601_STATUS",
+      "type_id": 2,
+      "values": [
+        -3.0960400414945255,
+        -1.092627458993286,
+        0.9107851235079534
+      ],
+      "raw_values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "过渡中",
+        "关闭",
+        "开启"
+      ]
+    },
+    {
+      "active_position": 64,
+      "original_index": 77,
+      "name": "2_P_003_STATUS",
+      "type_id": 1,
+      "values": [
+        -0.4448887648351617,
+        2.2477528745202524
+      ],
+      "raw_values": [
+        1.0,
+        2.0
+      ],
+      "state_names": [
+        "停止",
+        "运行"
+      ]
+    }
+  ],
+  "sha256": "8b967cb7c96a1476939e1bb98c1c848cfefe3a98832b63a19b200fd161ab481d"
+}

@@ -243,20 +243,39 @@ Three explicit pure-verbalizer candidate configs are provided:
 All three use L=64, MOIRAI Base layer 12, DirectProjector, classifier weight
 zero, verbalizer weight one, and cloud-locked physical/evaluation batch four.
 
-Run all three candidates sequentially for seeds 2026/2027/2028 with:
+The pure-verbalizer configs above remain available for exact reproduction. The
+current cloud launcher defaults to the next classifier-head development round:
+
+- `e1`: all 80 numeric tokens, classifier CE, and 170 epoch-stratified
+  synthetic windows per epoch.
+- `e2`: all 80 numeric tokens plus additive compact DTT, classifier CE, and no
+  synthetic anomalies.
+
+Both reuse `configs/wadi_qwen3_06b.json` and express all method differences as
+explicit `scripts/train.py` CLI overrides. Run both sequentially for seeds
+2026/2027/2028 with:
 
 ```bash
 bash scripts/run_strong_candidates_cloud.sh
 ```
 
-The launcher still calls the single `scripts/train.py` entry point. It writes
+The launcher calls the single `scripts/train.py` entry point. It writes
 one log per run, prints a heartbeat every 60 seconds, stops on the first
 failure, and refuses to reuse a non-empty output directory. Useful overrides:
 
 ```bash
-SEEDS="2026" CANDIDATES="s1 s2 s3" DRY_RUN=1 \
+SEEDS="2026" CANDIDATES="e1 e2" DRY_RUN=1 \
   bash scripts/run_strong_candidates_cloud.sh
-RUN_TAG=rerun01 SEEDS="2027 2028" CANDIDATES="s2 s3" \
+RUN_TAG=rerun01 SEEDS="2027 2028" CANDIDATES="e1 e2" \
+  bash scripts/run_strong_candidates_cloud.sh
+```
+
+The combined `e3` candidate (additive DTT plus synthetic anomalies plus
+classifier CE) is intentionally excluded from the default run. Only after the
+paired e1/e2 results have been reviewed should it be enabled explicitly:
+
+```bash
+ALLOW_COMBINED_CANDIDATE=1 CANDIDATES="e3" RUN_TAG=combo01 \
   bash scripts/run_strong_candidates_cloud.sh
 ```
 

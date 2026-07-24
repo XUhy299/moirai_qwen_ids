@@ -1,0 +1,36 @@
+{
+  "environment": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "torch": "2.4.1+cu121",
+    "torch_cuda": "12.1",
+    "transformers": "4.51.3",
+    "uni2ts": "2.0.0",
+    "cuda_available": true,
+    "device": "cuda:0",
+    "gpu_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "gpu_total_memory_mb": 8187.5,
+    "gpu_capability": "8.9"
+  },
+  "purpose": "engineering smoke and physical-batch capacity probe; not a detection experiment",
+  "configuration": {
+    "window_length": 64,
+    "moirai_layer": 12,
+    "projector": "direct",
+    "discrete_to_text": true,
+    "dtt_semantic_style": "full"
+  },
+  "results": [
+    {
+      "batch_size": 1,
+      "status": "ok",
+      "loss": 0.789685,
+      "seconds": 13.884,
+      "peak_allocated_mb": 7082.0,
+      "peak_reserved_mb": 7782.0,
+      "free_before_mb": 5567.0,
+      "total_memory_mb": 8187.5
+    }
+  ],
+  "recommended_physical_batch_size": null,
+  "headroom_fraction": 0.15
+}
