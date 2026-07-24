@@ -3,13 +3,13 @@ set -Eeuo pipefail
 
 # Sequential cloud launcher for the classifier-head development round.
 #
-# Default candidates:
-#   e1: all 80 numeric tokens + train-only synthetic anomalies + classifier CE
-#   e2: all 80 numeric tokens + additive compact DTT, no synthetic + classifier CE
+# Default candidates for the semantic counterfactual round:
+#   e4: additive compact DTT with raw variable IDs only
+#   e5: additive compact DTT with a fixed shuffled semantic assignment
 #
-# The combined e3 candidate is available but intentionally gated until e1 and
-# e2 have each been reviewed. This script always reuses scripts/train.py and
-# never opens locked test data.
+# Historical e1/e2 remain available for reproduction. The rejected combined e3
+# candidate remains gated. This script always reuses scripts/train.py and never
+# opens locked test data.
 
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
@@ -17,10 +17,11 @@ cd "$PROJECT_ROOT"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 DEVICE="${DEVICE:-cuda}"
 SEEDS="${SEEDS:-2026 2027 2028}"
-CANDIDATES="${CANDIDATES:-e1 e2}"
+CANDIDATES="${CANDIDATES:-e4 e5}"
 BASE_CONFIG="${BASE_CONFIG:-configs/wadi_qwen3_06b.json}"
 BATCH_SIZE="${BATCH_SIZE:-4}"
 EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-4}"
+SEMANTIC_SHUFFLE_SEED="${SEMANTIC_SHUFFLE_SEED:-2026}"
 SYNTHETIC_SAMPLES="${SYNTHETIC_SAMPLES:-170}"
 SYNTHETIC_DATA_DIR="${SYNTHETIC_DATA_DIR:-$PROJECT_ROOT/synthetic_data/WADI-CLEAN_X_train_full_l64_seed2026}"
 RUN_TAG="${RUN_TAG:-$(date +%Y%m%d)}"
@@ -36,8 +37,10 @@ candidate_slug() {
     e1) echo "e1_numeric_l64_l12_direct_head_ce_synrot${SYNTHETIC_SAMPLES}" ;;
     e2) echo "e2_dtt_add_l64_l12_direct_head_ce_nosynth" ;;
     e3) echo "e3_dtt_add_l64_l12_direct_head_ce_synrot${SYNTHETIC_SAMPLES}" ;;
+    e4) echo "e4_dtt_add_idonly_l64_l12_direct_head_ce_nosynth" ;;
+    e5) echo "e5_dtt_add_shuffled_s${SEMANTIC_SHUFFLE_SEED}_l64_l12_direct_head_ce_nosynth" ;;
     *)
-      echo "Unknown candidate '$1'; expected e1, e2, or e3." >&2
+      echo "Unknown candidate '$1'; expected e1, e2, e3, e4, or e5." >&2
       return 1
       ;;
   esac
@@ -46,14 +49,16 @@ candidate_slug() {
 candidate_description() {
   case "$1" in
     e1) echo "80 numeric tokens + classifier CE + synthetic anomalies" ;;
-    e2) echo "80 numeric tokens + additive compact DTT + classifier CE, no synthetic" ;;
+    e2) echo "80 numeric tokens + additive compact DTT + correct semantics + classifier CE, no synthetic" ;;
     e3) echo "80 numeric tokens + additive compact DTT + classifier CE + synthetic anomalies" ;;
+    e4) echo "80 numeric tokens + additive compact DTT + raw IDs only + classifier CE, no synthetic" ;;
+    e5) echo "80 numeric tokens + additive compact DTT + fixed shuffled semantics + classifier CE, no synthetic" ;;
     *) return 1 ;;
   esac
 }
 
 candidate_uses_dtt() {
-  [[ "$1" == "e2" || "$1" == "e3" ]]
+  [[ "$1" == "e2" || "$1" == "e3" || "$1" == "e4" || "$1" == "e5" ]]
 }
 
 candidate_uses_synthetic() {
@@ -85,6 +90,10 @@ fi
 
 if [[ ! "$BATCH_SIZE" =~ ^[1-9][0-9]*$ || ! "$EVAL_BATCH_SIZE" =~ ^[1-9][0-9]*$ ]]; then
   echo "BATCH_SIZE and EVAL_BATCH_SIZE must be positive integers." >&2
+  exit 1
+fi
+if [[ ! "$SEMANTIC_SHUFFLE_SEED" =~ ^[0-9]+$ ]]; then
+  echo "SEMANTIC_SHUFFLE_SEED must be a non-negative integer." >&2
   exit 1
 fi
 
@@ -166,6 +175,9 @@ echo "Seeds: $SEEDS"
 echo "Candidates: $CANDIDATES"
 echo "Base config: $BASE_CONFIG"
 echo "Physical/evaluation batch: $BATCH_SIZE/$EVAL_BATCH_SIZE"
+if [[ " ${candidate_list[*]} " == *" e5 "* ]]; then
+  echo "Fixed semantic shuffle seed: $SEMANTIC_SHUFFLE_SEED"
+fi
 if [[ "$needs_synthetic" == "1" ]]; then
   echo "Synthetic package: $SYNTHETIC_DATA_DIR"
   echo "Synthetic windows per epoch: $SYNTHETIC_SAMPLES"
@@ -216,6 +228,20 @@ for seed in "${seed_list[@]}"; do
         --dtt-semantic-style compact
         --dtt-numeric-mode all_active
       )
+      case "$candidate" in
+        e4)
+          command+=(--dtt-semantic-variant id_only)
+          ;;
+        e5)
+          command+=(
+            --dtt-semantic-variant shuffled
+            --dtt-semantic-shuffle-seed "$SEMANTIC_SHUFFLE_SEED"
+          )
+          ;;
+        *)
+          command+=(--dtt-semantic-variant correct)
+          ;;
+      esac
     fi
     if candidate_uses_synthetic "$candidate"; then
       command+=(

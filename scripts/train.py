@@ -146,6 +146,21 @@ def parse_args() -> argparse.Namespace:
         help="Use compact or full natural-language variable descriptions in DTT mode.",
     )
     parser.add_argument(
+        "--dtt-semantic-variant",
+        choices=("correct", "id_only", "shuffled"),
+        default=None,
+        help=(
+            "DTT semantic assignment: correct descriptions, raw variable IDs only, "
+            "or a fixed shuffled-description counterfactual."
+        ),
+    )
+    parser.add_argument(
+        "--dtt-semantic-shuffle-seed",
+        type=int,
+        default=None,
+        help="Fixed mapping seed for --dtt-semantic-variant shuffled; keep it constant across training seeds.",
+    )
+    parser.add_argument(
         "--dtt-numeric-mode",
         choices=("continuous_only", "all_active"),
         default=None,
@@ -229,6 +244,10 @@ def main() -> None:
         replacements["discrete_to_text"] = True
     if args.dtt_semantic_style is not None:
         replacements["dtt_semantic_style"] = args.dtt_semantic_style
+    if args.dtt_semantic_variant is not None:
+        replacements["dtt_semantic_variant"] = args.dtt_semantic_variant
+    if args.dtt_semantic_shuffle_seed is not None:
+        replacements["dtt_semantic_shuffle_seed"] = args.dtt_semantic_shuffle_seed
     if args.dtt_numeric_mode is not None:
         replacements["dtt_numeric_mode"] = args.dtt_numeric_mode
     if args.prompt_variant is not None:
@@ -240,6 +259,10 @@ def main() -> None:
         config = replace(config, **replacements)
     if args.dtt_semantic_style is not None and not config.discrete_to_text:
         raise ValueError("--dtt-semantic-style requires --discrete-to-text")
+    if args.dtt_semantic_variant is not None and not config.discrete_to_text:
+        raise ValueError("--dtt-semantic-variant requires --discrete-to-text")
+    if args.dtt_semantic_shuffle_seed is not None and not config.discrete_to_text:
+        raise ValueError("--dtt-semantic-shuffle-seed requires --discrete-to-text")
     if args.dtt_numeric_mode is not None and not config.discrete_to_text:
         raise ValueError("--dtt-numeric-mode requires --discrete-to-text")
     if not args.use_synthetic_anomalies and (
@@ -310,6 +333,8 @@ def main() -> None:
         semantic_map = VariableSemanticMap.from_names(
             metadata.active_names,
             style=config.dtt_semantic_style,
+            variant=config.dtt_semantic_variant,
+            shuffle_seed=config.dtt_semantic_shuffle_seed,
         )
         semantic_map.save(output_dir / "variable_semantics.json")
     split = split_single_attack_support_query(
@@ -537,6 +562,12 @@ def main() -> None:
         "qwen_chat_template_applied": bool(config.discrete_to_text),
         "qwen_thinking_enabled": False if config.discrete_to_text else None,
         "dtt_semantic_style": config.dtt_semantic_style if config.discrete_to_text else None,
+        "dtt_semantic_variant": config.dtt_semantic_variant if config.discrete_to_text else None,
+        "dtt_semantic_shuffle_seed": (
+            config.dtt_semantic_shuffle_seed
+            if config.discrete_to_text and config.dtt_semantic_variant == "shuffled"
+            else None
+        ),
         "dtt_numeric_mode": config.dtt_numeric_mode if config.discrete_to_text else None,
         "full_run_authorized": bool(args.full_run_authorized),
         "synthetic_anomalies": (

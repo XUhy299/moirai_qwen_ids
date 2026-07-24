@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -103,22 +104,65 @@ def describe_wadi_variable(name: str, style: str = "compact") -> str:
 class VariableSemanticMap:
     rule: str
     style: str
-    variables: tuple[dict[str, str], ...]
+    variables: tuple[dict[str, object], ...]
 
     @classmethod
-    def from_names(cls, names: tuple[str, ...], style: str = "compact") -> "VariableSemanticMap":
+    def from_names(
+        cls,
+        names: tuple[str, ...],
+        style: str = "compact",
+        *,
+        variant: str = "correct",
+        shuffle_seed: int = 2026,
+    ) -> "VariableSemanticMap":
+        if variant not in {"correct", "id_only", "shuffled"}:
+            raise ValueError("Semantic variant must be correct, id_only, or shuffled")
+        descriptions = tuple(describe_wadi_variable(name, style=style) for name in names)
+        if variant == "correct":
+            # Keep the original payload byte-for-byte compatible so historical
+            # correct-semantic hashes remain meaningful.
+            return cls(
+                rule="由WADI标签中的工艺段、设备缩写、编号和信号后缀保守解析；Prompt同时保留原始变量ID",
+                style=style,
+                variables=tuple(
+                    {"name": name, "description": description}
+                    for name, description in zip(names, descriptions)
+                ),
+            )
+        if variant == "id_only":
+            return cls(
+                rule="仅保留原始变量ID；删除变量自然语言描述，其他DTT输入保持不变",
+                style=style,
+                variables=tuple({"name": name, "description": ""} for name in names),
+            )
+        if len(names) < 2:
+            raise ValueError("Shuffled semantics require at least two variables")
+        cycle = list(range(len(names)))
+        random.Random(shuffle_seed).shuffle(cycle)
+        source_for_target = [0] * len(names)
+        for position, target_index in enumerate(cycle):
+            source_for_target[target_index] = cycle[(position + 1) % len(cycle)]
+        if any(target == source for target, source in enumerate(source_for_target)):
+            raise RuntimeError("Semantic shuffle unexpectedly retained a correct assignment")
         return cls(
-            rule="由WADI标签中的工艺段、设备缩写、编号和信号后缀保守解析；Prompt同时保留原始变量ID",
+            rule=(
+                "使用固定全排列打乱变量自然语言描述；原始变量ID、数值Token、离散状态和变量顺序保持不变；"
+                f"shuffle_seed={shuffle_seed}"
+            ),
             style=style,
             variables=tuple(
-                {"name": name, "description": describe_wadi_variable(name, style=style)}
-                for name in names
+                {
+                    "name": name,
+                    "description": descriptions[source_index],
+                    "description_source_name": names[source_index],
+                }
+                for name, source_index in zip(names, source_for_target)
             ),
         )
 
     @property
     def descriptions(self) -> tuple[str, ...]:
-        return tuple(item["description"] for item in self.variables)
+        return tuple(str(item["description"]) for item in self.variables)
 
     def as_dict(self) -> dict[str, object]:
         return {"rule": self.rule, "style": self.style, "variables": list(self.variables)}

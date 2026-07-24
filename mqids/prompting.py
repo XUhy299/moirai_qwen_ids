@@ -243,13 +243,20 @@ class PromptAssembler(nn.Module):
                 has_discrete_state = active_pos in discrete_slot
                 if has_numeric_token:
                     if semantic_style == "compact":
-                        header = f"{name}（{description}），{window_length}步："
+                        semantic_text = f"（{description}）" if description else ""
+                        header = f"{name}{semantic_text}，{window_length}步："
                     else:
                         variable_kind = "离散变量" if has_discrete_state else "连续变量"
-                        header = (
-                            f"{variable_kind}：{description}（原始变量ID：{name}），"
-                            f"过去{window_length}步时序Token："
-                        )
+                        if description:
+                            header = (
+                                f"{variable_kind}：{description}（原始变量ID：{name}），"
+                                f"过去{window_length}步时序Token："
+                            )
+                        else:
+                            header = (
+                                f"{variable_kind}（原始变量ID：{name}），"
+                                f"过去{window_length}步时序Token："
+                            )
                     parts.append(text_embedding(header))
                     slot = numeric_slot[active_pos]
                     parts.append(soft_tokens[sample, slot : slot + 1])
@@ -265,12 +272,16 @@ class PromptAssembler(nn.Module):
                 else:
                     state = discrete_states[sample][discrete_slot[active_pos]]
                     if semantic_style == "compact":
-                        line = f"{name}（{description}）={state}\n"
+                        semantic_text = f"（{description}）" if description else ""
+                        line = f"{name}{semantic_text}={state}\n"
                     else:
-                        line = (
-                            f"离散变量：{description}（原始变量ID：{name}），"
-                            f"当前状态：{state}。\n"
-                        )
+                        if description:
+                            line = (
+                                f"离散变量：{description}（原始变量ID：{name}），"
+                                f"当前状态：{state}。\n"
+                            )
+                        else:
+                            line = f"离散变量（原始变量ID：{name}），当前状态：{state}。\n"
                     parts.append(text_embedding(line))
             parts.append(suffix)
             sequences.append(torch.cat(parts, dim=0))

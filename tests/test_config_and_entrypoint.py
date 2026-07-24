@@ -26,6 +26,18 @@ class ConfigAndEntrypointTests(unittest.TestCase):
         )
         self.assertEqual(configured.dtt_numeric_mode, "all_active")
 
+    def test_non_default_dtt_semantic_variant_requires_dtt(self) -> None:
+        with self.assertRaisesRegex(ValueError, "require discrete_to_text"):
+            replace(ExperimentConfig(projector="direct"), dtt_semantic_variant="id_only")
+        configured = replace(
+            ExperimentConfig(projector="direct"),
+            discrete_to_text=True,
+            dtt_semantic_variant="shuffled",
+            dtt_semantic_shuffle_seed=17,
+        )
+        self.assertEqual(configured.dtt_semantic_variant, "shuffled")
+        self.assertEqual(configured.dtt_semantic_shuffle_seed, 17)
+
     def test_invalid_run_names_cannot_escape_outputs(self) -> None:
         for name in ("../escape", "/absolute", r"..\escape", "has space"):
             with self.subTest(name=name), self.assertRaises(ValueError):

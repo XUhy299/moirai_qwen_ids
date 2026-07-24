@@ -244,16 +244,24 @@ All three use L=64, MOIRAI Base layer 12, DirectProjector, classifier weight
 zero, verbalizer weight one, and cloud-locked physical/evaluation batch four.
 
 The pure-verbalizer configs above remain available for exact reproduction. The
-current cloud launcher defaults to the next classifier-head development round:
+cloud launcher also retains the completed classifier-head candidates:
 
 - `e1`: all 80 numeric tokens, classifier CE, and 170 epoch-stratified
   synthetic windows per epoch.
 - `e2`: all 80 numeric tokens plus additive compact DTT, classifier CE, and no
   synthetic anomalies.
 
-Both reuse `configs/wadi_qwen3_06b.json` and express all method differences as
-explicit `scripts/train.py` CLI overrides. Run both sequentially for seeds
-2026/2027/2028 with:
+After e2 established a development-set signal, the launcher now defaults to
+the two semantic counterfactuals while reusing the completed e2 correct-semantic
+run as the third comparison arm:
+
+- `e4`: raw variable IDs only; natural-language descriptions are removed.
+- `e5`: descriptions are reassigned by one fixed derangement while raw IDs,
+  numeric tokens, discrete states, and variable order remain unchanged.
+
+All candidates reuse `configs/wadi_qwen3_06b.json` and express method
+differences as explicit `scripts/train.py` CLI overrides. Run e4/e5
+sequentially for seeds 2026/2027/2028 with:
 
 ```bash
 bash scripts/run_strong_candidates_cloud.sh
@@ -264,9 +272,18 @@ one log per run, prints a heartbeat every 60 seconds, stops on the first
 failure, and refuses to reuse a non-empty output directory. Useful overrides:
 
 ```bash
-SEEDS="2026" CANDIDATES="e1 e2" DRY_RUN=1 \
+SEEDS="2026" CANDIDATES="e4 e5" DRY_RUN=1 \
   bash scripts/run_strong_candidates_cloud.sh
-RUN_TAG=rerun01 SEEDS="2027 2028" CANDIDATES="e1 e2" \
+RUN_TAG=semantic01 SEEDS="2027 2028" CANDIDATES="e4 e5" \
+  bash scripts/run_strong_candidates_cloud.sh
+```
+
+The default fixed semantic shuffle seed is 2026 and must remain identical
+across training seeds. It can be overridden only as a separately named
+protocol:
+
+```bash
+SEMANTIC_SHUFFLE_SEED=17 CANDIDATES="e5" RUN_TAG=semantic_shuffle17 \
   bash scripts/run_strong_candidates_cloud.sh
 ```
 

@@ -47,6 +47,8 @@ class ExperimentConfig:
     prompt_variant: str = "process"
     discrete_to_text: bool = False
     dtt_semantic_style: str = "compact"
+    dtt_semantic_variant: str = "correct"
+    dtt_semantic_shuffle_seed: int = 2026
     dtt_numeric_mode: str = "continuous_only"
     qwen_subdir: str = "Qwen3-0.6B"
     labels: tuple[str, str] = ("正常", "异常")
@@ -111,10 +113,16 @@ class ExperimentConfig:
             raise ValueError(f"prompt_variant must be one of {PROMPT_VARIANTS}")
         if self.dtt_semantic_style not in {"compact", "full"}:
             raise ValueError("dtt_semantic_style must be compact or full")
+        if self.dtt_semantic_variant not in {"correct", "id_only", "shuffled"}:
+            raise ValueError("dtt_semantic_variant must be correct, id_only, or shuffled")
+        if self.dtt_semantic_shuffle_seed < 0:
+            raise ValueError("dtt_semantic_shuffle_seed cannot be negative")
         if self.dtt_numeric_mode not in {"continuous_only", "all_active"}:
             raise ValueError("dtt_numeric_mode must be continuous_only or all_active")
         if not self.discrete_to_text and self.dtt_numeric_mode != "continuous_only":
             raise ValueError("dtt_numeric_mode=all_active requires discrete_to_text")
+        if not self.discrete_to_text and self.dtt_semantic_variant != "correct":
+            raise ValueError("Non-default DTT semantic variants require discrete_to_text")
 
     def as_dict(self) -> dict[str, Any]:
         result = {field.name: getattr(self, field.name) for field in fields(self)}

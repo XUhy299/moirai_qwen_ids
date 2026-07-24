@@ -245,6 +245,7 @@ def write_run_markdown(
         f"| 配置 Epochs / 实际完成 | {config.get('epochs')} / {len(history)} |",
         f"| 学习率 | {config.get('learning_rate')} |",
         f"| DTT语义样式 | {protocol.get('dtt_semantic_style')} |",
+        f"| DTT语义变体 | {protocol.get('dtt_semantic_variant')} |",
         f"| Prompt布局 | {protocol.get('prompt_layout')} |",
         f"| Qwen chat template | {protocol.get('qwen_chat_template_applied')} |",
         "",
