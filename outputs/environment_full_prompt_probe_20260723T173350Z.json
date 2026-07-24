@@ -1,0 +1,61 @@
+{
+  "environment": {
+    "python": "3.10.20 (main, Jun 11 2026, 15:17:37) [GCC 14.3.0]",
+    "torch": "2.4.1+cu121",
+    "torch_cuda": "12.1",
+    "transformers": "4.51.3",
+    "uni2ts": "2.0.0",
+    "cuda_available": true,
+    "device": "cuda:0",
+    "gpu_name": "NVIDIA GeForce RTX 4080 SUPER",
+    "gpu_total_memory_mb": 32230.8,
+    "gpu_capability": "8.9"
+  },
+  "purpose": "engineering smoke and physical-batch capacity probe; not a detection experiment",
+  "configuration": {
+    "window_length": 64,
+    "moirai_layer": 12,
+    "projector": "direct",
+    "discrete_to_text": true,
+    "dtt_semantic_style": "full"
+  },
+  "results": [
+    {
+      "batch_size": 1,
+      "status": "ok",
+      "loss": 0.617171,
+      "seconds": 0.752,
+      "peak_allocated_mb": 7081.4,
+      "peak_reserved_mb": 7804.0,
+      "free_before_mb": 30413.7,
+      "total_memory_mb": 32230.8
+    },
+    {
+      "batch_size": 2,
+      "status": "ok",
+      "loss": 0.712465,
+      "seconds": 0.55,
+      "peak_allocated_mb": 12591.8,
+      "peak_reserved_mb": 13736.0,
+      "free_before_mb": 30309.7,
+      "total_memory_mb": 32230.8
+    },
+    {
+      "batch_size": 4,
+      "status": "ok",
+      "loss": 0.72664,
+      "seconds": 1.204,
+      "peak_allocated_mb": 23696.1,
+      "peak_reserved_mb": 25568.0,
+      "free_before_mb": 30315.7,
+      "total_memory_mb": 32230.8
+    },
+    {
+      "batch_size": 6,
+      "status": "oom",
+      "error": "CUDA out of memory. Tried to allocate 130.00 MiB. GPU 0 has a total capacity of 31.48 GiB of which 103.69 MiB is free. Including non-PyTorch memory, this process has 31.37 GiB memory in use. Of the allocated memory 29.94 GiB is allocated by PyTorch, and 1.12 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
+    }
+  ],
+  "recommended_physical_batch_size": 4,
+  "headroom_fraction": 0.15
+}

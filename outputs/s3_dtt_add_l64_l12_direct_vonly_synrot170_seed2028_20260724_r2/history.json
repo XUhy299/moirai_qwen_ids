@@ -1,0 +1,179 @@
+{
+  "epochs": [
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 0.8579277520845918,
+        "classifier_loss": 0.7237265783197739,
+        "verbalizer_loss": 0.8579277520845918,
+        "seconds": 169.93738217907958
+      },
+      "dev": {
+        "roc_auc": 0.6464461369832213,
+        "pr_auc": 0.02543749460882975,
+        "vocab_roc_auc": 0.6429039843362094,
+        "vocab_pr_auc": 0.018446739273573595,
+        "threshold": 0.5992506742477417,
+        "precision": 0.048507462686567165,
+        "recall": 0.15294117647058825,
+        "f1": 0.0736543909348442,
+        "false_positive_rate": 0.040611562350692784,
+        "false_negative_rate": 0.8470588235294118,
+        "examples": 6364,
+        "anomalies": 85,
+        "endpoints_min": 127,
+        "endpoints_max": 51834,
+        "seconds": 514.2628751851153,
+        "vocab_threshold": 0.2137051820755005,
+        "vocab_precision": 0.022193768672641914,
+        "vocab_recall": 0.611764705882353,
+        "vocab_f1": 0.042833607907743,
+        "vocab_false_positive_rate": 0.3648670170409301,
+        "vocab_false_negative_rate": 0.38823529411764707
+      },
+      "peak_cuda_memory_mb": 16448.94140625,
+      "selection_metric": "vocab_pr_auc",
+      "selection_score": 0.018446739273573595
+    },
+    {
+      "epoch": 2,
+      "train": {
+        "loss": 0.6989114323609016,
+        "classifier_loss": 0.6802053891911226,
+        "verbalizer_loss": 0.6989114323609016,
+        "seconds": 170.22297887993045
+      },
+      "dev": {
+        "roc_auc": 0.6606971885744263,
+        "pr_auc": 0.02359671255951783,
+        "vocab_roc_auc": 0.4007279165846941,
+        "vocab_pr_auc": 0.010374859092790359,
+        "threshold": 0.17838266491889954,
+        "precision": 0.031862745098039214,
+        "recall": 0.15294117647058825,
+        "f1": 0.052738336713995936,
+        "false_positive_rate": 0.06290810638636725,
+        "false_negative_rate": 0.8470588235294118,
+        "examples": 6364,
+        "anomalies": 85,
+        "endpoints_min": 127,
+        "endpoints_max": 51834,
+        "seconds": 523.1426297931466,
+        "vocab_threshold": 0.1259227693080902,
+        "vocab_precision": 0.013654618473895583,
+        "vocab_recall": 1.0,
+        "vocab_f1": 0.026941362916006344,
+        "vocab_false_positive_rate": 0.9778627169931517,
+        "vocab_false_negative_rate": 0.0
+      },
+      "peak_cuda_memory_mb": 16448.94140625,
+      "selection_metric": "vocab_pr_auc",
+      "selection_score": 0.010374859092790359
+    },
+    {
+      "epoch": 3,
+      "train": {
+        "loss": 0.671500732127358,
+        "classifier_loss": 0.8209821450710296,
+        "verbalizer_loss": 0.671500732127358,
+        "seconds": 179.89821827597916
+      },
+      "dev": {
+        "roc_auc": 0.8442951762644857,
+        "pr_auc": 0.046903567679793076,
+        "vocab_roc_auc": 0.8783142688513532,
+        "vocab_pr_auc": 0.05510648913625449,
+        "threshold": 0.16344544291496277,
+        "precision": 0.05268490374873354,
+        "recall": 0.611764705882353,
+        "f1": 0.09701492537313433,
+        "false_positive_rate": 0.14890906195254022,
+        "false_negative_rate": 0.38823529411764707,
+        "examples": 6364,
+        "anomalies": 85,
+        "endpoints_min": 127,
+        "endpoints_max": 51834,
+        "seconds": 519.5220585931093,
+        "vocab_threshold": 0.49218812584877014,
+        "vocab_precision": 0.05771365149833518,
+        "vocab_recall": 0.611764705882353,
+        "vocab_f1": 0.10547667342799187,
+        "vocab_false_positive_rate": 0.13521261347348304,
+        "vocab_false_negative_rate": 0.38823529411764707
+      },
+      "peak_cuda_memory_mb": 16448.94140625,
+      "selection_metric": "vocab_pr_auc",
+      "selection_score": 0.05510648913625449
+    },
+    {
+      "epoch": 4,
+      "train": {
+        "loss": 0.5933304004809435,
+        "classifier_loss": 0.8692531845148872,
+        "verbalizer_loss": 0.5933304004809435,
+        "seconds": 180.78891291702166
+      },
+      "dev": {
+        "roc_auc": 0.35385271165322313,
+        "pr_auc": 0.010450517406936982,
+        "vocab_roc_auc": 0.869844392606541,
+        "vocab_pr_auc": 0.07492634041682537,
+        "threshold": 0.1259227693080902,
+        "precision": 0.013385826771653543,
+        "recall": 1.0,
+        "f1": 0.026418026418026416,
+        "false_positive_rate": 0.9977703455964325,
+        "false_negative_rate": 0.0,
+        "examples": 6364,
+        "anomalies": 85,
+        "endpoints_min": 127,
+        "endpoints_max": 51834,
+        "seconds": 515.2138229550328,
+        "vocab_threshold": 0.8080672025680542,
+        "vocab_precision": 0.12222222222222222,
+        "vocab_recall": 0.25882352941176473,
+        "vocab_f1": 0.1660377358490566,
+        "vocab_false_positive_rate": 0.025163242554546904,
+        "vocab_false_negative_rate": 0.7411764705882353
+      },
+      "peak_cuda_memory_mb": 16448.94140625,
+      "selection_metric": "vocab_pr_auc",
+      "selection_score": 0.07492634041682537
+    },
+    {
+      "epoch": 5,
+      "train": {
+        "loss": 0.5635354881426867,
+        "classifier_loss": 0.8673380036213819,
+        "verbalizer_loss": 0.5635354881426867,
+        "seconds": 176.8169999460224
+      },
+      "dev": {
+        "roc_auc": 0.12117609585640277,
+        "pr_auc": 0.0074747748127132465,
+        "vocab_roc_auc": 0.9444357007016854,
+        "vocab_pr_auc": 0.1568586707574782,
+        "threshold": 0.1276526302099228,
+        "precision": 0.013404825737265416,
+        "recall": 1.0,
+        "f1": 0.026455026455026457,
+        "false_positive_rate": 0.9963369963369964,
+        "false_negative_rate": 0.0,
+        "examples": 6364,
+        "anomalies": 85,
+        "endpoints_min": 127,
+        "endpoints_max": 51834,
+        "seconds": 513.2153939539567,
+        "vocab_threshold": 0.8633915781974792,
+        "vocab_precision": 0.20114942528735633,
+        "vocab_recall": 0.4117647058823529,
+        "vocab_f1": 0.27027027027027023,
+        "vocab_false_positive_rate": 0.022137283006848224,
+        "vocab_false_negative_rate": 0.5882352941176471
+      },
+      "peak_cuda_memory_mb": 16448.94140625,
+      "selection_metric": "vocab_pr_auc",
+      "selection_score": 0.1568586707574782
+    }
+  ]
+}

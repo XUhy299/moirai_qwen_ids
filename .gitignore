@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
-outputs/*
+outputs/*/*.npy
+outputs/*/*.pt
 !outputs/.gitkeep
 data/*
 !data/.gitkeep

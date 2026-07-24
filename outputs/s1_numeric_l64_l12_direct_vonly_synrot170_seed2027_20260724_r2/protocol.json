@@ -1,0 +1,135 @@
+{
+  "description": "single-attack-event supervised transfer with train-only synthetic anomalies",
+  "smoke": false,
+  "opened_data_files": {
+    "train_x": "data/wadi/WADI-CLEAN_X_train.npy",
+    "validation_x": "data/wadi/val_test/WADI-CLEAN_X_test_val.npy",
+    "validation_y": "data/wadi/val_test/WADI-CLEAN_Y_test_val.npy",
+    "sensor_names": "data/wadi/WADI-CLEAN_sensor_cols.txt",
+    "train_fitted_scaler": "data/wadi/WADI-CLEAN_scaler.pkl",
+    "synthetic_anomaly_package": "synthetic_data/WADI-CLEAN_X_train_full_l64_seed2026",
+    "test_x": null,
+    "test_y": null
+  },
+  "locked_test_files_opened": [],
+  "train_normal_windows": 510,
+  "train_anomaly_windows": 340,
+  "train_real_anomaly_windows": 170,
+  "train_synthetic_anomaly_windows": 170,
+  "train_total_windows": 850,
+  "dev_windows": 6364,
+  "effective_train_batch_size": 4,
+  "effective_eval_batch_size": 4,
+  "normal_endpoint_sha256": "66a574c48b6998f28f8d6123570288e2edaddd86896f89e497b28e6219688412",
+  "anomaly_endpoint_sha256": "cb951d48829ee3dcc6282e831d21fb970884feef210724ec1cd3a8349fa928c8",
+  "synthetic_selection_sha256": "6edf14cbd52f14a703a8c6b2af35bb715fdbabe26955977568bbd1cc042593ae",
+  "dev_endpoint_sha256": "ef3a91535f7f8c224e2eacb74d5a33eab0cc4cbca317a49100563d3e94daf3ea",
+  "dev_stride": 8,
+  "formal_endpoint_stride": 1,
+  "common_min_endpoint": 127,
+  "attack_run": [
+    5139,
+    6625
+  ],
+  "support_endpoint_range": [
+    5139,
+    5815
+  ],
+  "query_endpoint_range": [
+    5946,
+    6624
+  ],
+  "excluded_guard": [
+    5818,
+    5946
+  ],
+  "endpoint_label_rule": "Y[window_end]",
+  "classifier_loss_weight": 0.0,
+  "vocab_loss_weight": 1.0,
+  "moirai_encoder_layer": 12,
+  "prompt_variant": "process",
+  "discrete_to_text": false,
+  "prompt_layout": "legacy_token_block",
+  "qwen_chat_template_applied": false,
+  "qwen_thinking_enabled": null,
+  "dtt_semantic_style": null,
+  "dtt_numeric_mode": null,
+  "full_run_authorized": true,
+  "synthetic_anomalies": {
+    "enabled": true,
+    "package_available_windows": 5000,
+    "requested_windows": 170,
+    "requested_windows_per_epoch": 170,
+    "selected_windows": 170,
+    "selected_windows_per_epoch": 170,
+    "sampling_mode": "epoch_stratified",
+    "scheduled_epochs": 5,
+    "unique_selected_windows_across_epochs": 850,
+    "smoke_cap_applied": false,
+    "package_input_x_sha256": "e46eecece7485cebe3aed544dbc9039fc9e657385521ea6a071d59ce231565de",
+    "package_operator_counts": {
+      "dependency_break": 760,
+      "flatline": 693,
+      "shift_ramp": 1266,
+      "soft_patch_replacement": 1527,
+      "spike": 754
+    },
+    "selected_operator_counts": {
+      "dependency_break": 26,
+      "flatline": 23,
+      "shift_ramp": 43,
+      "soft_patch_replacement": 52,
+      "spike": 26
+    },
+    "epoch_operator_counts": [
+      {
+        "dependency_break": 26,
+        "flatline": 23,
+        "shift_ramp": 43,
+        "soft_patch_replacement": 52,
+        "spike": 26
+      },
+      {
+        "dependency_break": 26,
+        "flatline": 23,
+        "shift_ramp": 43,
+        "soft_patch_replacement": 52,
+        "spike": 26
+      },
+      {
+        "dependency_break": 26,
+        "flatline": 23,
+        "shift_ramp": 43,
+        "soft_patch_replacement": 52,
+        "spike": 26
+      },
+      {
+        "dependency_break": 26,
+        "flatline": 23,
+        "shift_ramp": 43,
+        "soft_patch_replacement": 52,
+        "spike": 26
+      },
+      {
+        "dependency_break": 26,
+        "flatline": 23,
+        "shift_ramp": 43,
+        "soft_patch_replacement": 52,
+        "spike": 26
+      }
+    ],
+    "endpoint_label_rule": "point_masks[:, -1] == true",
+    "selection_index_sha256": "6edf14cbd52f14a703a8c6b2af35bb715fdbabe26955977568bbd1cc042593ae",
+    "epoch_selection_sha256": [
+      "77a3a54f0fcc56cae698329b8471670f941fa605f6f1ae0725a04a1b48460b4d",
+      "367e4d264f6705e53dde6ee2157b3db55d089f020d1248b835444b8dcb2497a0",
+      "4fbc2220c27b59b9e48ad92fea8904825b8fce6cf7bca5ef25a49b2fedf37b0a",
+      "5bbf8e1f426c08dc53cbeb82afabbe71194ca4646b87c8185b5fcf7106b782bb",
+      "c245a63720600be475cabb3f0820934559a46bda0be1e32bcd7c8743d4a68252"
+    ],
+    "epoch_indices_file": "synthetic_epoch_indices.npy"
+  },
+  "variable_semantics_sha256": null,
+  "discrete_state_vocabulary_sha256": null,
+  "limitation": "Support and query are chronological portions of the same attack event."
+}
